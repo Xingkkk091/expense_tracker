@@ -3,11 +3,13 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../services/invoice_parser.dart';
 import '../services/update_service.dart';
 import '../widgets/filter_sheet.dart';
 import '../widgets/transaction_card.dart';
 import '../widgets/update_dialog.dart';
 import 'add_transaction_screen.dart';
+import 'invoice_scanner_screen.dart';
 import 'map_screen.dart';
 import 'statistics_screen.dart';
 
@@ -59,6 +61,21 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (_) => FilterSheet(initial: provider.filter),
     );
     if (result != null) provider.setFilter(result);
+  }
+
+  Future<void> _scanInvoice() async {
+    final invoice = await Navigator.push<InvoiceData>(
+      context,
+      MaterialPageRoute(builder: (_) => const InvoiceScannerScreen()),
+    );
+    if (invoice != null && mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AddTransactionScreen(invoicePrefill: invoice),
+        ),
+      );
+    }
   }
 
   Future<void> _editBudget() async {
@@ -178,16 +195,32 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: _tab == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const AddTransactionScreen()),
-              ),
-              icon: const Icon(Icons.add),
-              label: const Text('新增'),
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'scan_invoice',
+                  onPressed: _scanInvoice,
+                  backgroundColor: theme.colorScheme.tertiary,
+                  foregroundColor: theme.colorScheme.onTertiary,
+                  tooltip: '掃發票',
+                  child: const Icon(Icons.qr_code_scanner),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton.extended(
+                  heroTag: 'add_tx',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AddTransactionScreen()),
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('新增'),
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                ),
+              ],
             )
           : _tab == 1
               ? FloatingActionButton(

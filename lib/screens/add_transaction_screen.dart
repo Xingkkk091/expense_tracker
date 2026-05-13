@@ -3,13 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../services/invoice_parser.dart';
 import '../services/location_service.dart';
 import '../widgets/amount_keypad.dart';
 import '../widgets/category_grid.dart';
+import '../widgets/place_search_field.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final Transaction? existing;
-  const AddTransactionScreen({super.key, this.existing});
+  final InvoiceData? invoicePrefill;
+  const AddTransactionScreen({super.key, this.existing, this.invoicePrefill});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -41,6 +44,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _date = t.date;
       _lat = t.latitude;
       _lng = t.longitude;
+    }
+    final inv = widget.invoicePrefill;
+    if (inv != null) {
+      _amountText = inv.total.toStringAsFixed(
+          inv.total.truncateToDouble() == inv.total ? 0 : 2);
+      _date = inv.date;
+      // 標題：第一個品項或發票號碼
+      if (inv.items.isNotEmpty) {
+        _titleCtrl.text = inv.items.first.name;
+      } else {
+        _titleCtrl.text = '發票 ${inv.displayNumber}';
+      }
+      // 備註：品項清單 + 發票號碼
+      final lines = <String>['發票 ${inv.displayNumber}'];
+      if (inv.sellerTaxId.isNotEmpty) {
+        lines.add('賣方統編 ${inv.sellerTaxId}');
+      }
+      for (final it in inv.items) {
+        lines.add('${it.name} x${it.quantity}  \$${it.price.toStringAsFixed(0)}');
+      }
+      _noteCtrl.text = lines.join('\n');
+      _isExpense = true;
     }
   }
 
@@ -297,37 +322,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ),
           const SizedBox(height: 12),
 
-          // 地址
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _addressCtrl,
-                  decoration: const InputDecoration(
-                    labelText: '地址',
-                    prefixIcon: Icon(Icons.location_on),
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                    hintText: '手動輸入或點按右側',
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              _loadingLocation
-                  ? const Padding(
-                      padding: EdgeInsets.all(14),
-                      child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child:
-                              CircularProgressIndicator(strokeWidth: 2)),
-                    )
-                  : IconButton.filled(
-                      onPressed: _getLocation,
-                      icon: const Icon(Icons.my_location),
-                      tooltip: '自動取得位置',
-                    ),
-            ],
+          // 地址 + 店家搜尋
+          PlaceSearchField(
+            controller: _addressCtrl,
+            loadingCurrentLocation: _loadingLocation,
+            onUseCurrentLocation: _getLocation,
+            onPicked: (r) {
+              setState(() {
+                _addressCtrl.text = r.address;
+                _lat = r.latitude;
+                _lng = r.longitude;
+                // 若使用者標題還是空的，順便帶入店家名稱
+                if (_titleCtrl.text.trim().isEmpty && r.name.isNotEmpty) {
+                  _titleCtrl.text = r.name;
+                }
+              });
+            },
           ),
           const SizedBox(height: 12),
 

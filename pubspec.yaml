@@ -1,8 +1,7 @@
 name: expense_tracker
 description: 記帳 App - 記錄消費行為與地址
 publish_to: 'none'
-version: 1.0.1+2
-
+version: 1.0.2+3
 environment:
   sdk: ^3.11.5
 

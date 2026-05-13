@@ -108,7 +108,14 @@ $tagExists = ($LASTEXITCODE -eq 0)
 $ErrorActionPreference = $prev
 if ($tagExists) { throw "Release $tag 已存在，請改用其他版本號" }
 
-Invoke-NativeChecked -Block { gh release create $tag $ApkPath --title $tag --notes $Notes } -ErrorMessage "gh release create 失敗"
+# 多行 notes 透過 --notes 參數在 PS5.1 下偶爾會觸發 gh 互動模式，改用 --notes-file 比較穩
+$notesFile = [System.IO.Path]::GetTempFileName()
+try {
+    [System.IO.File]::WriteAllText($notesFile, $Notes, [System.Text.UTF8Encoding]::new($false))
+    Invoke-NativeChecked -Block { gh release create $tag $ApkPath --title $tag --notes-file $notesFile } -ErrorMessage "gh release create 失敗"
+} finally {
+    Remove-Item $notesFile -Force -ErrorAction SilentlyContinue
+}
 
 Write-Step "6/6 完成"
 $releaseUrl = "https://github.com/Xingkkk091/expense_tracker/releases/tag/$tag"

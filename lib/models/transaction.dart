@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Transaction {
   final String id;
   final String title;
@@ -50,14 +52,26 @@ class Transaction {
       );
 }
 
-const List<Map<String, dynamic>> kCategories = [
-  {'label': '餐飲', 'icon': '🍜'},
-  {'label': '交通', 'icon': '🚗'},
-  {'label': '購物', 'icon': '🛍️'},
-  {'label': '娛樂', 'icon': '🎮'},
-  {'label': '醫療', 'icon': '💊'},
-  {'label': '住房', 'icon': '🏠'},
-  {'label': '教育', 'icon': '📚'},
-  {'label': '薪資', 'icon': '💰'},
-  {'label': '其他', 'icon': '📋'},
+class CategoryInfo {
+  final String label;
+  final IconData icon;
+  final Color color;
+  const CategoryInfo(this.label, this.icon, this.color);
+}
+
+const List<CategoryInfo> kCategories = [
+  CategoryInfo('餐飲', Icons.restaurant,         Color(0xFFFF7043)),
+  CategoryInfo('交通', Icons.directions_car,     Color(0xFF42A5F5)),
+  CategoryInfo('購物', Icons.shopping_bag,       Color(0xFFAB47BC)),
+  CategoryInfo('娛樂', Icons.sports_esports,     Color(0xFFEC407A)),
+  CategoryInfo('醫療', Icons.medical_services,   Color(0xFFEF5350)),
+  CategoryInfo('住房', Icons.home,               Color(0xFF26A69A)),
+  CategoryInfo('教育', Icons.school,             Color(0xFF7E57C2)),
+  CategoryInfo('薪資', Icons.payments,           Color(0xFF66BB6A)),
+  CategoryInfo('其他', Icons.more_horiz,         Color(0xFF78909C)),
 ];
+
+CategoryInfo categoryOf(String label) => kCategories.firstWhere(
+      (c) => c.label == label,
+      orElse: () => kCategories.last,
+    );

@@ -13,88 +13,168 @@ class StatisticsScreen extends StatelessWidget {
     final provider = context.watch<TransactionProvider>();
     final byCategory = provider.expenseByCategory;
     final total = provider.totalExpense;
+    final hotspots = provider.hotspots;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-      body: total == 0
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.pie_chart_outline, size: 64, color: Colors.grey),
-                  SizedBox(height: 12),
-                  Text('尚無支出資料', style: TextStyle(color: Colors.grey)),
-                ],
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // 總覽卡片
-                _SummaryRow(
-                  income: provider.totalIncome,
-                  expense: provider.totalExpense,
-                  balance: provider.balance,
-                ),
-                const SizedBox(height: 20),
+      backgroundColor: theme.colorScheme.surfaceContainerLowest,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        children: [
+          _SummaryRow(
+            income: provider.totalIncome,
+            expense: provider.totalExpense,
+            balance: provider.balance,
+          ),
+          const SizedBox(height: 16),
 
-                // 圓餅圖
-                Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('支出分類佔比',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 220,
-                          child: PieChart(
-                            PieChartData(
-                              sections: _buildSections(byCategory, total),
-                              centerSpaceRadius: 50,
-                              sectionsSpace: 2,
-                            ),
-                          ),
+          if (total == 0)
+            _emptyCard('尚無支出資料', Icons.pie_chart_outline)
+          else ...[
+            // 圓餅圖
+            Card(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionTitle(
+                        icon: Icons.pie_chart, title: '支出分類佔比'),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 220,
+                      child: PieChart(
+                        PieChartData(
+                          sections: _buildSections(byCategory, total),
+                          centerSpaceRadius: 50,
+                          sectionsSpace: 2,
                         ),
-                        const SizedBox(height: 12),
-                        _Legend(byCategory: byCategory, total: total),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    _Legend(byCategory: byCategory),
+                  ],
                 ),
-                const SizedBox(height: 16),
-
-                // 長條圖 - 近7天支出
-                _WeeklyBarChart(transactions: provider.transactions),
-              ],
+              ),
             ),
+            const SizedBox(height: 16),
+          ],
+
+          // 7天長條圖
+          _WeeklyBarChart(transactions: provider.transactions),
+
+          const SizedBox(height: 16),
+
+          // 消費熱點
+          if (hotspots.isNotEmpty)
+            Card(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionTitle(
+                        icon: Icons.location_on, title: '消費熱點 Top 5'),
+                    const SizedBox(height: 8),
+                    ...hotspots.asMap().entries.map((e) {
+                      final idx = e.key;
+                      final entry = e.value;
+                      final maxValue = hotspots.first.value;
+                      final ratio =
+                          maxValue > 0 ? entry.value / maxValue : 0.0;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 26,
+                              height: 26,
+                              decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(13)),
+                              alignment: Alignment.center,
+                              child: Text('${idx + 1}',
+                                  style: TextStyle(
+                                      color: theme.colorScheme
+                                          .onPrimaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13)),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(entry.key,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 4),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(3),
+                                    child: LinearProgressIndicator(
+                                      value: ratio.toDouble(),
+                                      minHeight: 4,
+                                      backgroundColor:
+                                          theme.colorScheme.surfaceContainerHighest,
+                                      valueColor: AlwaysStoppedAnimation(
+                                          theme.colorScheme.primary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                                '\$${NumberFormat('#,##0').format(entry.value)}',
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyCard(String text, IconData icon) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(icon, size: 56, color: Colors.grey),
+              const SizedBox(height: 8),
+              Text(text, style: const TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   List<PieChartSectionData> _buildSections(
       Map<String, double> byCategory, double total) {
-    final colors = [
-      Colors.blue,
-      Colors.orange,
-      Colors.purple,
-      Colors.red,
-      Colors.teal,
-      Colors.pink,
-      Colors.amber,
-      Colors.indigo,
-      Colors.green,
-    ];
-    int i = 0;
     return byCategory.entries.map((e) {
       final pct = e.value / total * 100;
-      final color = colors[i++ % colors.length];
+      final cat = categoryOf(e.key);
       return PieChartSectionData(
-        color: color,
+        color: cat.color,
         value: e.value,
         title: pct >= 5 ? '${pct.toStringAsFixed(0)}%' : '',
         radius: 60,
@@ -105,38 +185,48 @@ class StatisticsScreen extends StatelessWidget {
   }
 }
 
-class _Legend extends StatelessWidget {
-  final Map<String, double> byCategory;
-  final double total;
-  const _Legend({required this.byCategory, required this.total});
+class _SectionTitle extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  const _SectionTitle({required this.icon, required this.title});
 
   @override
   Widget build(BuildContext context) {
-    final colors = [
-      Colors.blue, Colors.orange, Colors.purple, Colors.red,
-      Colors.teal, Colors.pink, Colors.amber, Colors.indigo, Colors.green,
-    ];
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 6),
+        Text(title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      ],
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  final Map<String, double> byCategory;
+  const _Legend({required this.byCategory});
+
+  @override
+  Widget build(BuildContext context) {
     final fmt = NumberFormat('#,##0');
     return Wrap(
       spacing: 12,
-      runSpacing: 8,
-      children: byCategory.entries.toList().asMap().entries.map((entry) {
-        final i = entry.key;
-        final e = entry.value;
-        final icon = kCategories
-            .firstWhere((c) => c['label'] == e.key,
-                orElse: () => {'icon': '📋'})['icon'] as String;
+      runSpacing: 6,
+      children: byCategory.entries.map((e) {
+        final cat = categoryOf(e.key);
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-                width: 12,
-                height: 12,
+                width: 10,
+                height: 10,
                 decoration: BoxDecoration(
-                    color: colors[i % colors.length],
-                    shape: BoxShape.circle)),
+                    color: cat.color, shape: BoxShape.circle)),
             const SizedBox(width: 4),
-            Text('$icon ${e.key}  \$${fmt.format(e.value)}',
+            Icon(cat.icon, size: 13, color: cat.color),
+            const SizedBox(width: 2),
+            Text('${e.key}  \$${fmt.format(e.value)}',
                 style: const TextStyle(fontSize: 12)),
           ],
         );
@@ -167,26 +257,24 @@ class _WeeklyBarChart extends StatelessWidget {
           .fold(0.0, (sum, t) => sum + t.amount);
     }).toList();
 
-    final maxY =
-        (amounts.reduce((a, b) => a > b ? a : b) * 1.2).ceilToDouble();
+    final maxValue = amounts.reduce((a, b) => a > b ? a : b);
+    final maxY = maxValue <= 0 ? 100.0 : (maxValue * 1.2).ceilToDouble();
 
     return Card(
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('近 7 天支出',
-                style:
-                    TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const _SectionTitle(
+                icon: Icons.bar_chart, title: '近 7 天支出'),
             const SizedBox(height: 16),
             SizedBox(
               height: 180,
               child: BarChart(
                 BarChartData(
-                  maxY: maxY <= 0 ? 100 : maxY,
+                  maxY: maxY,
                   barGroups: List.generate(7, (i) {
                     return BarChartGroupData(
                       x: i,
@@ -213,8 +301,11 @@ class _WeeklyBarChart extends StatelessWidget {
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
                           final d = days[value.toInt()];
-                          return Text('${d.month}/${d.day}',
-                              style: const TextStyle(fontSize: 10));
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text('${d.month}/${d.day}',
+                                style: const TextStyle(fontSize: 10)),
+                          );
                         },
                       ),
                     ),
@@ -238,12 +329,11 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat('#,##0');
     return Row(
       children: [
-        _SummaryCard(label: '總收入', amount: income, color: Colors.green.shade600),
+        _SummaryCard(label: '收入', amount: income, color: Colors.green.shade600),
         const SizedBox(width: 8),
-        _SummaryCard(label: '總支出', amount: expense, color: Colors.red.shade500),
+        _SummaryCard(label: '支出', amount: expense, color: Colors.red.shade400),
         const SizedBox(width: 8),
         _SummaryCard(
             label: '結餘',
@@ -270,15 +360,15 @@ class _SummaryCard extends StatelessWidget {
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           child: Column(
             children: [
               Text(label,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  style: const TextStyle(fontSize: 11, color: Colors.grey)),
               const SizedBox(height: 4),
               Text('\$${fmt.format(amount)}',
                   style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: color)),
             ],

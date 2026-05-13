@@ -15,19 +15,12 @@ class TransactionCard extends StatelessWidget {
     required this.onTap,
   });
 
-  String get _categoryIcon {
-    final match = kCategories.firstWhere(
-      (c) => c['label'] == transaction.category,
-      orElse: () => {'icon': '📋'},
-    );
-    return match['icon'] as String;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final cat = categoryOf(transaction.category);
     final amountColor =
-        transaction.isExpense ? Colors.red.shade600 : Colors.green.shade600;
+        transaction.isExpense ? Colors.red.shade500 : Colors.green.shade600;
     final amountPrefix = transaction.isExpense ? '-' : '+';
 
     return Slidable(
@@ -40,78 +33,95 @@ class TransactionCard extends StatelessWidget {
             foregroundColor: Colors.white,
             icon: Icons.delete,
             label: '刪除',
+            borderRadius: BorderRadius.circular(14),
           ),
         ],
       ),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 6,
+                color: Colors.black.withOpacity(
+                    theme.brightness == Brightness.dark ? 0.25 : 0.06),
+                blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Container(
+          child: Row(
+            children: [
+              // 左側分類色 accent bar
+              Container(
+                width: 4,
+                height: 56,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: cat.color,
+                  borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(4)),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 12),
+                child: Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
+                    color: cat.color.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Center(
-                    child: Text(_categoryIcon,
-                        style: const TextStyle(fontSize: 22)),
-                  ),
+                  child: Icon(cat.icon, color: cat.color, size: 22),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(transaction.title,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 15)),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Text(transaction.category,
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(transaction.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 15)),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text(transaction.category,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: cat.color,
+                                fontWeight: FontWeight.w500)),
+                        if (transaction.address.isNotEmpty) ...[
+                          Text('  ·  ',
                               style: TextStyle(
                                   fontSize: 12,
-                                  color: colorScheme.onSurfaceVariant)),
-                          if (transaction.address.isNotEmpty) ...[
-                            const Text('  ·  ',
-                                style: TextStyle(fontSize: 12,
-                                    color: Colors.grey)),
-                            const Icon(Icons.location_on,
-                                size: 12, color: Colors.grey),
-                            const SizedBox(width: 2),
-                            Flexible(
-                              child: Text(
-                                transaction.address,
-                                style: const TextStyle(
-                                    fontSize: 11, color: Colors.grey),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                                  color: theme.hintColor)),
+                          Icon(Icons.location_on,
+                              size: 11, color: theme.hintColor),
+                          const SizedBox(width: 2),
+                          Flexible(
+                            child: Text(
+                              transaction.address,
+                              style: TextStyle(
+                                  fontSize: 11, color: theme.hintColor),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
                         ],
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Column(
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 12, 16, 12),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
@@ -124,12 +134,13 @@ class TransactionCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       DateFormat('MM/dd HH:mm').format(transaction.date),
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(
+                          fontSize: 11, color: theme.hintColor),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

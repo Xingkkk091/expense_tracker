@@ -18,15 +18,22 @@ class ExpenseTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const seed = Color(0xFF4F6AF5);
     return MaterialApp(
       title: '記帳本',
       debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.system,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4F6AF5),
-          brightness: Brightness.light,
-        ),
+        colorScheme:
+            ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light),
         textTheme: GoogleFonts.notoSansTextTheme(),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme:
+            ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark),
+        textTheme:
+            GoogleFonts.notoSansTextTheme(ThemeData.dark().textTheme),
         useMaterial3: true,
       ),
       home: const HomeScreen(),

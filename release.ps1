@@ -21,8 +21,6 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-# git/gh 會把 LF/CRLF 等警告寫到 stderr，PowerShell 預設會視為 error，這裡關掉
-$PSNativeCommandUseErrorActionPreference = $false
 $ProjectRoot = $PSScriptRoot
 $Flutter = 'C:\Users\User\flutter\bin\flutter.bat'
 $ApkPath = Join-Path $ProjectRoot 'build\app\outputs\flutter-apk\app-release.apk'
@@ -31,6 +29,25 @@ $PubspecPath = Join-Path $ProjectRoot 'pubspec.yaml'
 function Write-Step($msg) {
     Write-Host ""
     Write-Host "==> $msg" -ForegroundColor Cyan
+}
+
+# 在 Windows PowerShell 5.1 下，git/gh 的 stderr 警告（LF/CRLF 等）
+# 在 $ErrorActionPreference='Stop' 時會被視為終止錯誤。這個 wrapper 暫時放寬
+# ErrorActionPreference，只用 $LASTEXITCODE 來判斷成敗。
+function Invoke-NativeChecked {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Block,
+        [string]$ErrorMessage = '命令執行失敗'
+    )
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $Block
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+    if ($code -ne 0) { throw "$ErrorMessage (exit $code)" }
 }
 
 Write-Step "1/6 檢查環境"
@@ -70,30 +87,28 @@ $content = $content -replace '(?m)^version:\s*\d+\.\d+\.\d+\+\d+\s*$', $newLine
 Write-Host "  $oldVersion+$oldBuild  ->  $Version+$newBuild" -ForegroundColor Green
 
 Write-Step "3/6 Flutter build APK (release)"
-& $Flutter build apk --release
-if ($LASTEXITCODE -ne 0) { throw "flutter build 失敗" }
+Invoke-NativeChecked -Block { & $Flutter build apk --release } -ErrorMessage "flutter build 失敗"
 if (-not (Test-Path $ApkPath)) { throw "找不到 APK: $ApkPath" }
 $apkSize = [math]::Round((Get-Item $ApkPath).Length / 1MB, 2)
 Write-Host "  APK $apkSize MB" -ForegroundColor Green
 
 Write-Step "4/6 Git commit & push"
-git -C $ProjectRoot add .
-if ($LASTEXITCODE -ne 0) { throw "git add 失敗" }
+Invoke-NativeChecked -Block { git -C $ProjectRoot add . } -ErrorMessage "git add 失敗"
 $commitMsg = "v${Version}: $Notes"
-git -C $ProjectRoot commit -m $commitMsg
-if ($LASTEXITCODE -ne 0) { throw "git commit 失敗" }
-git -C $ProjectRoot push
-if ($LASTEXITCODE -ne 0) { throw "git push 失敗" }
+Invoke-NativeChecked -Block { git -C $ProjectRoot commit -m $commitMsg } -ErrorMessage "git commit 失敗"
+Invoke-NativeChecked -Block { git -C $ProjectRoot push } -ErrorMessage "git push 失敗"
 
 Write-Step "5/6 建立 GitHub Release"
 $tag = "v$Version"
-# 檢查 tag 是否已存在
-$existing = gh release view $tag --json tagName 2>$null
-if ($LASTEXITCODE -eq 0) {
-    throw "Release $tag 已存在，請改用其他版本號"
-}
-gh release create $tag $ApkPath --title $tag --notes $Notes
-if ($LASTEXITCODE -ne 0) { throw "gh release create 失敗" }
+# 檢查 tag 是否已存在（這裡不用 Invoke-NativeChecked，因為「不存在」回非零是正常情況）
+$prev = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+gh release view $tag --json tagName *> $null
+$tagExists = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = $prev
+if ($tagExists) { throw "Release $tag 已存在，請改用其他版本號" }
+
+Invoke-NativeChecked -Block { gh release create $tag $ApkPath --title $tag --notes $Notes } -ErrorMessage "gh release create 失敗"
 
 Write-Step "6/6 完成"
 $releaseUrl = "https://github.com/Xingkkk091/expense_tracker/releases/tag/$tag"

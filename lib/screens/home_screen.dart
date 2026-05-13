@@ -9,6 +9,7 @@ import '../widgets/filter_sheet.dart';
 import '../widgets/transaction_card.dart';
 import '../widgets/update_dialog.dart';
 import 'add_transaction_screen.dart';
+import 'carrier_screen.dart';
 import 'invoice_scanner_screen.dart';
 import 'map_screen.dart';
 import 'statistics_screen.dart';
@@ -172,6 +173,14 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: _openFilter,
             ),
           ],
+          IconButton(
+            icon: const Icon(Icons.qr_code_2),
+            tooltip: '我的載具',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CarrierScreen()),
+            ),
+          ),
         ],
       ),
       body: IndexedStack(

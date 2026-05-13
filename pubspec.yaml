@@ -1,7 +1,7 @@
 name: expense_tracker
 description: 記帳 App - 記錄消費行為與地址
 publish_to: 'none'
-version: 1.0.3+4
+version: 1.0.4+5
 environment:
   sdk: ^3.11.5
 
@@ -29,6 +29,7 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   mobile_scanner: ^5.2.3
+  barcode_widget: ^2.0.4
 
 dev_dependencies:
   flutter_test:

@@ -14,10 +14,15 @@ param(
     [string]$Version,
 
     [Parameter(Mandatory = $true, Position = 1)]
-    [string]$Notes
+    [string]$Notes,
+
+    # 跳過「有未 commit 變更要繼續嗎？」的詢問（非互動環境必加）
+    [switch]$Force
 )
 
 $ErrorActionPreference = 'Stop'
+# git/gh 會把 LF/CRLF 等警告寫到 stderr，PowerShell 預設會視為 error，這裡關掉
+$PSNativeCommandUseErrorActionPreference = $false
 $ProjectRoot = $PSScriptRoot
 $Flutter = 'C:\Users\User\flutter\bin\flutter.bat'
 $ApkPath = Join-Path $ProjectRoot 'build\app\outputs\flutter-apk\app-release.apk'
@@ -38,8 +43,16 @@ $status = git -C $ProjectRoot status --porcelain
 if ($status) {
     Write-Host "偵測到未 commit 的變更：" -ForegroundColor Yellow
     Write-Host $status
-    $ans = Read-Host "要繼續嗎？這些變更會一起包進 v$Version commit (y/N)"
-    if ($ans -ne 'y') { Write-Host "已取消"; exit 1 }
+    if (-not $Force) {
+        try {
+            $ans = Read-Host "要繼續嗎？這些變更會一起包進 v$Version commit (y/N)"
+        } catch {
+            throw "目前是非互動環境。若要在此情況下繼續，請加 -Force 參數重新執行。"
+        }
+        if ($ans -ne 'y') { Write-Host "已取消"; exit 1 }
+    } else {
+        Write-Host "(-Force 已啟用，自動繼續)" -ForegroundColor DarkGray
+    }
 }
 
 Write-Step "2/6 更新 pubspec.yaml 版本號"

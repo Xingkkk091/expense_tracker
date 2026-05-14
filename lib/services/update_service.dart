@@ -37,13 +37,30 @@ class UpdateService {
       final notes = (data['body'] as String?) ?? '';
       final assets = (data['assets'] as List?) ?? [];
 
-      String? apkUrl;
+      // 收集所有 .apk 資產，再依架構優先序挑選
+      final apks = <String, String>{}; // name -> url
       for (final a in assets) {
         final name = (a['name'] as String?) ?? '';
         if (name.toLowerCase().endsWith('.apk')) {
-          apkUrl = a['browser_download_url'] as String?;
-          break;
+          final url = a['browser_download_url'] as String?;
+          if (url != null) apks[name.toLowerCase()] = url;
         }
+      }
+      String? apkUrl;
+      if (apks.isNotEmpty) {
+        // 優先 arm64-v8a > armeabi-v7a > app-release > 任何
+        String? pick;
+        for (final key in apks.keys) {
+          if (key.contains('arm64')) {
+            pick = apks[key];
+            break;
+          }
+        }
+        pick ??= apks.entries
+            .firstWhere((e) => e.key.contains('armeabi'),
+                orElse: () => apks.entries.first)
+            .value;
+        apkUrl = pick;
       }
       if (apkUrl == null || latestVersion.isEmpty) return null;
 

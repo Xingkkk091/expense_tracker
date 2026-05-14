@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_provider.dart';
 import '../services/budget_service.dart';
+import '../theme/app_colors.dart';
 
 class BudgetHistoryScreen extends StatefulWidget {
   const BudgetHistoryScreen({super.key});
@@ -124,7 +125,7 @@ class _BudgetHistoryScreenState extends State<BudgetHistoryScreen> {
               children: [
                 _legendDot(scheme.primary, '預算'),
                 const SizedBox(width: 16),
-                _legendDot(const Color(0xFFB57C70), '實際支出'),
+                _legendDot(AppColors.expense, '實際支出'),
               ],
             ),
             const SizedBox(height: 16),
@@ -144,7 +145,7 @@ class _BudgetHistoryScreenState extends State<BudgetHistoryScreen> {
                     ),
                     LineChartBarData(
                       spots: spots((m) => actual[m] ?? 0),
-                      color: const Color(0xFFB57C70),
+                      color: AppColors.expense,
                       barWidth: 2,
                       isCurved: false,
                       dotData: const FlDotData(show: true),
@@ -221,10 +222,10 @@ class _BudgetHistoryScreenState extends State<BudgetHistoryScreen> {
               String status = '無預算';
               if (pct != null) {
                 if (pct > 1) {
-                  statusColor = const Color(0xFFB57C70);
+                  statusColor = AppColors.expense;
                   status = '超支 ${((pct - 1) * 100).toStringAsFixed(0)}%';
                 } else {
-                  statusColor = const Color(0xFF7C9070);
+                  statusColor = AppColors.income;
                   status = '達成率 ${(pct * 100).toStringAsFixed(0)}%';
                 }
               }

@@ -2,8 +2,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../theme/app_colors.dart';
 
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({super.key});
@@ -15,6 +17,7 @@ class StatisticsScreen extends StatelessWidget {
     final total = provider.totalExpense;
     final hotspots = provider.hotspots;
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
@@ -30,7 +33,7 @@ class StatisticsScreen extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () => Navigator.pushNamed(context, '/reports'),
             icon: const Icon(Icons.insights, size: 18),
-            label: const Text('進階報表（月度比較・年度・區間分析）'),
+            label: Text(l.advancedReports),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(44),
             ),
@@ -38,7 +41,7 @@ class StatisticsScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           if (total == 0)
-            _emptyCard('尚無支出資料', Icons.pie_chart_outline)
+            _emptyCard(l.statsNoExpense, Icons.pie_chart_outline)
           else ...[
             // 圓餅圖
             Card(
@@ -49,8 +52,8 @@ class StatisticsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SectionTitle(
-                        icon: Icons.pie_chart, title: '支出分類佔比'),
+                    _SectionTitle(
+                        icon: Icons.pie_chart, title: l.statsCategoryShare),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 220,
@@ -86,8 +89,8 @@ class StatisticsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SectionTitle(
-                        icon: Icons.location_on, title: '消費熱點 Top 5'),
+                    _SectionTitle(
+                        icon: Icons.location_on, title: l.statsHotspot),
                     const SizedBox(height: 8),
                     ...hotspots.asMap().entries.map((e) {
                       final idx = e.key;
@@ -288,7 +291,9 @@ class _WeeklyBarChartState extends State<_WeeklyBarChart> {
             Row(
               children: [
                 _SectionTitle(
-                    icon: Icons.bar_chart, title: '近 $_rangeDays 天支出'),
+                    icon: Icons.bar_chart,
+                    title: AppLocalizations.of(context)
+                        .statsWeekExpense(_rangeDays)),
                 const Spacer(),
                 SegmentedButton<int>(
                   segments: const [
@@ -379,17 +384,17 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       children: [
         _SummaryCard(
-            label: '收入', amount: income, color: const Color(0xFF7C9070)),
+            label: '收入', amount: income, color: AppColors.income),
         const SizedBox(width: 8),
         _SummaryCard(
-            label: '支出', amount: expense, color: const Color(0xFFB57C70)),
+            label: '支出', amount: expense, color: AppColors.expense),
         const SizedBox(width: 8),
         _SummaryCard(
             label: '結餘',
             amount: balance,
             color: balance >= 0
-                ? const Color(0xFF5C6B7A)
-                : const Color(0xFFC9A86A)),
+                ? AppColors.neutral
+                : AppColors.warning),
       ],
     );
   }

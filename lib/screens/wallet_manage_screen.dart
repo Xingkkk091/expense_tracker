@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/app_icons.dart';
 import '../providers/transaction_provider.dart';
 import '../services/wallet_service.dart';
+import '../theme/app_colors.dart';
 
 class WalletManageScreen extends StatefulWidget {
   const WalletManageScreen({super.key});
@@ -76,7 +77,7 @@ class _WalletManageScreenState extends State<WalletManageScreen> {
               child: const Text('取消')),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFB57C70)),
+                backgroundColor: AppColors.expense),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('刪除'),
           ),
@@ -131,8 +132,8 @@ class _WalletManageScreenState extends State<WalletManageScreen> {
                         style: TextStyle(
                             fontSize: 12,
                             color: (balances[w.name] ?? 0) >= 0
-                                ? const Color(0xFF7C9070)
-                                : const Color(0xFFB57C70)),
+                                ? AppColors.income
+                                : AppColors.expense),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -144,7 +145,7 @@ class _WalletManageScreenState extends State<WalletManageScreen> {
                           IconButton(
                             icon:
                                 const Icon(Icons.delete_outline, size: 18),
-                            color: const Color(0xFFB57C70),
+                            color: AppColors.expense,
                             onPressed: () => _delete(w),
                           ),
                         ],

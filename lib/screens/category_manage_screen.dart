@@ -4,6 +4,7 @@ import '../models/app_icons.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../services/category_service.dart';
+import '../theme/app_colors.dart';
 
 class CategoryManageScreen extends StatefulWidget {
   const CategoryManageScreen({super.key});
@@ -73,7 +74,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
               child: const Text('取消')),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFB57C70)),
+                backgroundColor: AppColors.expense),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('刪除'),
           ),
@@ -163,7 +164,7 @@ class _CategoryManageScreenState extends State<CategoryManageScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 18),
-                    color: const Color(0xFFB57C70),
+                    color: AppColors.expense,
                     onPressed: () => _delete(custom!),
                   ),
                 ],
@@ -188,8 +189,8 @@ class _CategoryEditDialogState extends State<_CategoryEditDialog> {
 
   static const _palette = [
     Color(0xFFC17B6F), Color(0xFF6E8CA0), Color(0xFF9B8AA6),
-    Color(0xFFB58AA0), Color(0xFFB57C70), Color(0xFF6F9089),
-    Color(0xFF8A86A6), Color(0xFF7C9070), Color(0xFFC9A86A),
+    Color(0xFFB58AA0), AppColors.expense, Color(0xFF6F9089),
+    Color(0xFF8A86A6), AppColors.income, AppColors.warning,
     Color(0xFF8C8678),
   ];
 

@@ -202,8 +202,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _section(l.sectionSecurity),
           SwitchListTile(
             secondary: const Icon(Icons.lock_outline),
-            title: const Text('App 鎖（PIN）'),
-            subtitle: Text(_lockEnabled ? '已啟用' : '未啟用'),
+            title: Text(l.appLock),
+            subtitle:
+                Text(_lockEnabled ? l.appLockEnabled : l.appLockDisabled),
             value: _lockEnabled,
             onChanged: (v) async {
               if (v) {
@@ -217,8 +218,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (_lockEnabled && _bioAvailable)
             SwitchListTile(
               secondary: const Icon(Icons.fingerprint),
-              title: const Text('生物辨識解鎖'),
-              subtitle: const Text('指紋 / 臉部'),
+              title: Text(l.biometric),
+              subtitle: Text(l.biometricSub),
               value: _bioEnabled,
               onChanged: (v) async {
                 await _auth.setBiometricEnabled(v);
@@ -228,29 +229,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (_lockEnabled)
             ListTile(
               leading: const Icon(Icons.pin),
-              title: const Text('變更 PIN'),
+              title: Text(l.changePin),
               onTap: _setupPin,
             ),
 
           _section(l.sectionLedger),
           ListTile(
             leading: const Icon(Icons.savings),
-            title: const Text('月預算'),
+            title: Text(l.monthlyBudget),
             subtitle: Text(context.watch<TransactionProvider>().monthlyBudget > 0
                 ? '\$${context.watch<TransactionProvider>().monthlyBudget.toStringAsFixed(0)}'
-                : '未設定'),
+                : l.notSet),
             onTap: () => _editBudget(),
           ),
           ListTile(
             leading: const Icon(Icons.timeline),
-            title: const Text('預算歷史'),
-            subtitle: const Text('每月達成率趨勢'),
+            title: Text(l.menuBudgetHistory),
+            subtitle: Text(l.menuBudgetHistorySub),
             onTap: () => Navigator.pushNamed(context, '/budget-history'),
           ),
           ListTile(
             leading: const Icon(Icons.account_balance_wallet),
-            title: const Text('帳本 / 錢包'),
-            subtitle: const Text('現金、信用卡、電子支付分開記'),
+            title: Text(l.menuWallets),
+            subtitle: Text(l.menuWalletsSub),
             onTap: () async {
               await Navigator.pushNamed(context, '/wallets');
               await _load();
@@ -258,20 +259,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.category),
-            title: const Text('分類管理'),
-            subtitle: const Text('新增、編輯自訂分類'),
+            title: Text(l.menuCategories),
+            subtitle: Text(l.menuCategoriesSub),
             onTap: () => Navigator.pushNamed(context, '/categories'),
           ),
           ListTile(
             leading: const Icon(Icons.repeat),
-            title: const Text('重複記帳'),
-            subtitle: const Text('房租、訂閱等定期項目'),
+            title: Text(l.menuRecurring),
+            subtitle: Text(l.menuRecurringSub),
             onTap: () => Navigator.pushNamed(context, '/recurring'),
           ),
           ListTile(
             leading: const Icon(Icons.qr_code_2),
-            title: const Text('我的載具'),
-            subtitle: Text(_carrierCode ?? '未設定'),
+            title: Text(l.myCarrier),
+            subtitle: Text(_carrierCode ?? l.notSet),
             onTap: () async {
               await Navigator.pushNamed(context, '/carrier');
               await _load();
@@ -281,26 +282,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _section(l.sectionData),
           ListTile(
             leading: const Icon(Icons.file_upload),
-            title: const Text('匯出 JSON 備份'),
-            subtitle: const Text('完整備份所有資料'),
+            title: Text(l.exportJson),
+            subtitle: Text(l.exportJsonSub),
             onTap: _exportJson,
           ),
           ListTile(
             leading: const Icon(Icons.table_view),
-            title: const Text('匯出 CSV'),
-            subtitle: const Text('可用 Excel 開啟對帳'),
+            title: Text(l.exportCsv),
+            subtitle: Text(l.exportCsvSub),
             onTap: _exportCsv,
           ),
           ListTile(
             leading: const Icon(Icons.file_download),
-            title: const Text('匯入 JSON 備份'),
-            subtitle: const Text('會覆蓋現有資料'),
+            title: Text(l.importJson),
+            subtitle: Text(l.importJsonSub),
             onTap: _importJson,
           ),
           ListTile(
             leading: Icon(Icons.delete_forever, color: Colors.red.shade400),
-            title: const Text('清除所有資料'),
-            subtitle: const Text('不可復原'),
+            title: Text(l.clearData),
+            subtitle: Text(l.clearDataSub),
             textColor: Colors.red.shade600,
             onTap: _clearAll,
           ),
@@ -308,12 +309,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _section(l.sectionAbout),
           ListTile(
             leading: const Icon(Icons.info_outline),
-            title: const Text('版本'),
+            title: Text(l.version),
             subtitle: Text(_appVersion),
           ),
           ListTile(
             leading: const Icon(Icons.code),
-            title: const Text('原始碼'),
+            title: Text(l.sourceCode),
             subtitle: const Text('github.com/Xingkkk091/expense_tracker'),
           ),
           const SizedBox(height: 24),

@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../theme/app_colors.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -321,8 +322,8 @@ class _MapScreenState extends State<MapScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: t.isExpense
-                                ? const Color(0xFFB57C70)
-                                : const Color(0xFF7C9070)),
+                                ? AppColors.expense
+                                : AppColors.income),
                       ),
                     );
                   },

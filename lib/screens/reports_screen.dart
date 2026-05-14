@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../theme/app_colors.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -91,8 +92,8 @@ class _MonthCompareCard extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: diff >= 0
-                          ? const Color(0xFFB57C70)
-                          : const Color(0xFF7C9070)),
+                          ? AppColors.expense
+                          : AppColors.income),
                 ),
               ],
             ),
@@ -217,10 +218,10 @@ class _YearlyCard extends StatelessWidget {
             ),
             Row(
               children: [
-                _legendDot(const Color(0xFF7C9070),
+                _legendDot(AppColors.income,
                     '收入 ${fmt.format(yearIncome)}'),
                 const SizedBox(width: 16),
-                _legendDot(const Color(0xFFB57C70),
+                _legendDot(AppColors.expense,
                     '支出 ${fmt.format(yearExpense)}'),
               ],
             ),
@@ -234,14 +235,14 @@ class _YearlyCard extends StatelessWidget {
                     return BarChartGroupData(x: i, barRods: [
                       BarChartRodData(
                         toY: income[i],
-                        color: const Color(0xFF7C9070),
+                        color: AppColors.income,
                         width: 5,
                         borderRadius:
                             const BorderRadius.vertical(top: Radius.circular(2)),
                       ),
                       BarChartRodData(
                         toY: expense[i],
-                        color: const Color(0xFFB57C70),
+                        color: AppColors.expense,
                         width: 5,
                         borderRadius:
                             const BorderRadius.vertical(top: Radius.circular(2)),

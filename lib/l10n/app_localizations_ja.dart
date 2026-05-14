@@ -165,4 +165,132 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sectionAppearance => '外観';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get edit => '編集';
+
+  @override
+  String get notSet => '未設定';
+
+  @override
+  String get appLock => 'アプリロック（PIN）';
+
+  @override
+  String get appLockEnabled => '有効';
+
+  @override
+  String get appLockDisabled => '無効';
+
+  @override
+  String get biometric => '生体認証ロック解除';
+
+  @override
+  String get biometricSub => '指紋 / 顔';
+
+  @override
+  String get changePin => 'PINを変更';
+
+  @override
+  String get setPin => '4桁のPINを設定';
+
+  @override
+  String get confirmPin => '確認のためPINを再入力';
+
+  @override
+  String get menuBudgetHistory => '予算履歴';
+
+  @override
+  String get menuBudgetHistorySub => '毎月の達成率の推移';
+
+  @override
+  String get menuWallets => '財布';
+
+  @override
+  String get menuWalletsSub => '現金・クレカ・電子決済を分けて記録';
+
+  @override
+  String get menuCategories => 'カテゴリ管理';
+
+  @override
+  String get menuCategoriesSub => 'カスタムカテゴリの追加・編集';
+
+  @override
+  String get menuRecurring => '繰り返し記帳';
+
+  @override
+  String get menuRecurringSub => '家賃・サブスクなどの定期項目';
+
+  @override
+  String get exportJson => 'JSONバックアップを書き出し';
+
+  @override
+  String get exportJsonSub => '全データの完全バックアップ';
+
+  @override
+  String get exportCsv => 'CSVを書き出し';
+
+  @override
+  String get exportCsvSub => 'Excelで開いて照合できます';
+
+  @override
+  String get importJson => 'JSONバックアップを取り込み';
+
+  @override
+  String get importJsonSub => '既存データを上書きします';
+
+  @override
+  String get clearData => '全データを消去';
+
+  @override
+  String get clearDataSub => '元に戻せません';
+
+  @override
+  String get version => 'バージョン';
+
+  @override
+  String get sourceCode => 'ソースコード';
+
+  @override
+  String get filterTitle => '絞り込み';
+
+  @override
+  String get filterReset => 'リセット';
+
+  @override
+  String get filterApply => '絞り込みを適用';
+
+  @override
+  String get filterDateRange => '日付範囲';
+
+  @override
+  String get filterAmountRange => '金額範囲';
+
+  @override
+  String get filterUnlimited => '指定なし';
+
+  @override
+  String get filterMin => '最小';
+
+  @override
+  String get filterMax => '最大';
+
+  @override
+  String get statsCategoryShare => 'カテゴリ別支出';
+
+  @override
+  String statsWeekExpense(Object days) {
+    return '直近$days日の支出';
+  }
+
+  @override
+  String get statsHotspot => '消費ホットスポット Top 5';
+
+  @override
+  String get statsNoExpense => '支出データがありません';
+
+  @override
+  String get advancedReports => '詳細レポート（月比較・年間・範囲分析）';
 }

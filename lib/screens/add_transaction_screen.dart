@@ -11,6 +11,7 @@ import '../widgets/animated_widgets.dart';
 import '../widgets/calculator_keypad.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/place_search_field.dart';
+import '../theme/app_colors.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final Transaction? existing;
@@ -227,8 +228,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         fontWeight: FontWeight.w300,
                         letterSpacing: 1,
                         color: _isExpense
-                            ? AppExpenseColor.of(context)
-                            : AppIncomeColor.of(context),
+                            ? AppColors.expense
+                            : AppColors.income,
                       ),
                     ),
                   ],
@@ -417,7 +418,7 @@ class _SegToggle extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final selected = isExpense == expense;
     final activeColor =
-        expense ? AppExpenseColor.of(context) : AppIncomeColor.of(context);
+        expense ? AppColors.expense : AppColors.income;
     return Expanded(
       child: GestureDetector(
         onTap: () => onChanged(expense),
@@ -443,13 +444,4 @@ class _SegToggle extends StatelessWidget {
       ),
     );
   }
-}
-
-/// 統一支出/收入色（沿用 theme palette）
-class AppExpenseColor {
-  static Color of(BuildContext context) => const Color(0xFFB57C70);
-}
-
-class AppIncomeColor {
-  static Color of(BuildContext context) => const Color(0xFF7C9070);
 }

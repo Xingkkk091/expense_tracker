@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
+import '../theme/app_colors.dart';
 
 class TransactionCard extends StatelessWidget {
   final Transaction transaction;
@@ -20,8 +21,8 @@ class TransactionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cat = categoryOf(transaction.category);
     final amountColor = transaction.isExpense
-        ? const Color(0xFFB57C70)
-        : const Color(0xFF7C9070);
+        ? AppColors.expense
+        : AppColors.income;
     final amountPrefix = transaction.isExpense ? '-' : '+';
 
     return Slidable(

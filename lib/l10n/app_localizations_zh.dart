@@ -165,4 +165,132 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sectionAppearance => '外觀';
+
+  @override
+  String get ok => '確定';
+
+  @override
+  String get edit => '編輯';
+
+  @override
+  String get notSet => '未設定';
+
+  @override
+  String get appLock => 'App 鎖（PIN）';
+
+  @override
+  String get appLockEnabled => '已啟用';
+
+  @override
+  String get appLockDisabled => '未啟用';
+
+  @override
+  String get biometric => '生物辨識解鎖';
+
+  @override
+  String get biometricSub => '指紋 / 臉部';
+
+  @override
+  String get changePin => '變更 PIN';
+
+  @override
+  String get setPin => '設定 4 位 PIN';
+
+  @override
+  String get confirmPin => '再次輸入 PIN 確認';
+
+  @override
+  String get menuBudgetHistory => '預算歷史';
+
+  @override
+  String get menuBudgetHistorySub => '每月達成率趨勢';
+
+  @override
+  String get menuWallets => '帳本 / 錢包';
+
+  @override
+  String get menuWalletsSub => '現金、信用卡、電子支付分開記';
+
+  @override
+  String get menuCategories => '分類管理';
+
+  @override
+  String get menuCategoriesSub => '新增、編輯自訂分類';
+
+  @override
+  String get menuRecurring => '重複記帳';
+
+  @override
+  String get menuRecurringSub => '房租、訂閱等定期項目';
+
+  @override
+  String get exportJson => '匯出 JSON 備份';
+
+  @override
+  String get exportJsonSub => '完整備份所有資料';
+
+  @override
+  String get exportCsv => '匯出 CSV';
+
+  @override
+  String get exportCsvSub => '可用 Excel 開啟對帳';
+
+  @override
+  String get importJson => '匯入 JSON 備份';
+
+  @override
+  String get importJsonSub => '會覆蓋現有資料';
+
+  @override
+  String get clearData => '清除所有資料';
+
+  @override
+  String get clearDataSub => '不可復原';
+
+  @override
+  String get version => '版本';
+
+  @override
+  String get sourceCode => '原始碼';
+
+  @override
+  String get filterTitle => '篩選';
+
+  @override
+  String get filterReset => '重設';
+
+  @override
+  String get filterApply => '套用篩選';
+
+  @override
+  String get filterDateRange => '日期範圍';
+
+  @override
+  String get filterAmountRange => '金額範圍';
+
+  @override
+  String get filterUnlimited => '不限';
+
+  @override
+  String get filterMin => '最小';
+
+  @override
+  String get filterMax => '最大';
+
+  @override
+  String get statsCategoryShare => '支出分類佔比';
+
+  @override
+  String statsWeekExpense(Object days) {
+    return '近 $days 天支出';
+  }
+
+  @override
+  String get statsHotspot => '消費熱點 Top 5';
+
+  @override
+  String get statsNoExpense => '尚無支出資料';
+
+  @override
+  String get advancedReports => '進階報表（月度比較・年度・區間分析）';
 }

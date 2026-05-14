@@ -411,6 +411,258 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'外觀'**
   String get sectionAppearance;
+
+  /// No description provided for @ok.
+  ///
+  /// In zh, this message translates to:
+  /// **'確定'**
+  String get ok;
+
+  /// No description provided for @edit.
+  ///
+  /// In zh, this message translates to:
+  /// **'編輯'**
+  String get edit;
+
+  /// No description provided for @notSet.
+  ///
+  /// In zh, this message translates to:
+  /// **'未設定'**
+  String get notSet;
+
+  /// No description provided for @appLock.
+  ///
+  /// In zh, this message translates to:
+  /// **'App 鎖（PIN）'**
+  String get appLock;
+
+  /// No description provided for @appLockEnabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'已啟用'**
+  String get appLockEnabled;
+
+  /// No description provided for @appLockDisabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'未啟用'**
+  String get appLockDisabled;
+
+  /// No description provided for @biometric.
+  ///
+  /// In zh, this message translates to:
+  /// **'生物辨識解鎖'**
+  String get biometric;
+
+  /// No description provided for @biometricSub.
+  ///
+  /// In zh, this message translates to:
+  /// **'指紋 / 臉部'**
+  String get biometricSub;
+
+  /// No description provided for @changePin.
+  ///
+  /// In zh, this message translates to:
+  /// **'變更 PIN'**
+  String get changePin;
+
+  /// No description provided for @setPin.
+  ///
+  /// In zh, this message translates to:
+  /// **'設定 4 位 PIN'**
+  String get setPin;
+
+  /// No description provided for @confirmPin.
+  ///
+  /// In zh, this message translates to:
+  /// **'再次輸入 PIN 確認'**
+  String get confirmPin;
+
+  /// No description provided for @menuBudgetHistory.
+  ///
+  /// In zh, this message translates to:
+  /// **'預算歷史'**
+  String get menuBudgetHistory;
+
+  /// No description provided for @menuBudgetHistorySub.
+  ///
+  /// In zh, this message translates to:
+  /// **'每月達成率趨勢'**
+  String get menuBudgetHistorySub;
+
+  /// No description provided for @menuWallets.
+  ///
+  /// In zh, this message translates to:
+  /// **'帳本 / 錢包'**
+  String get menuWallets;
+
+  /// No description provided for @menuWalletsSub.
+  ///
+  /// In zh, this message translates to:
+  /// **'現金、信用卡、電子支付分開記'**
+  String get menuWalletsSub;
+
+  /// No description provided for @menuCategories.
+  ///
+  /// In zh, this message translates to:
+  /// **'分類管理'**
+  String get menuCategories;
+
+  /// No description provided for @menuCategoriesSub.
+  ///
+  /// In zh, this message translates to:
+  /// **'新增、編輯自訂分類'**
+  String get menuCategoriesSub;
+
+  /// No description provided for @menuRecurring.
+  ///
+  /// In zh, this message translates to:
+  /// **'重複記帳'**
+  String get menuRecurring;
+
+  /// No description provided for @menuRecurringSub.
+  ///
+  /// In zh, this message translates to:
+  /// **'房租、訂閱等定期項目'**
+  String get menuRecurringSub;
+
+  /// No description provided for @exportJson.
+  ///
+  /// In zh, this message translates to:
+  /// **'匯出 JSON 備份'**
+  String get exportJson;
+
+  /// No description provided for @exportJsonSub.
+  ///
+  /// In zh, this message translates to:
+  /// **'完整備份所有資料'**
+  String get exportJsonSub;
+
+  /// No description provided for @exportCsv.
+  ///
+  /// In zh, this message translates to:
+  /// **'匯出 CSV'**
+  String get exportCsv;
+
+  /// No description provided for @exportCsvSub.
+  ///
+  /// In zh, this message translates to:
+  /// **'可用 Excel 開啟對帳'**
+  String get exportCsvSub;
+
+  /// No description provided for @importJson.
+  ///
+  /// In zh, this message translates to:
+  /// **'匯入 JSON 備份'**
+  String get importJson;
+
+  /// No description provided for @importJsonSub.
+  ///
+  /// In zh, this message translates to:
+  /// **'會覆蓋現有資料'**
+  String get importJsonSub;
+
+  /// No description provided for @clearData.
+  ///
+  /// In zh, this message translates to:
+  /// **'清除所有資料'**
+  String get clearData;
+
+  /// No description provided for @clearDataSub.
+  ///
+  /// In zh, this message translates to:
+  /// **'不可復原'**
+  String get clearDataSub;
+
+  /// No description provided for @version.
+  ///
+  /// In zh, this message translates to:
+  /// **'版本'**
+  String get version;
+
+  /// No description provided for @sourceCode.
+  ///
+  /// In zh, this message translates to:
+  /// **'原始碼'**
+  String get sourceCode;
+
+  /// No description provided for @filterTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'篩選'**
+  String get filterTitle;
+
+  /// No description provided for @filterReset.
+  ///
+  /// In zh, this message translates to:
+  /// **'重設'**
+  String get filterReset;
+
+  /// No description provided for @filterApply.
+  ///
+  /// In zh, this message translates to:
+  /// **'套用篩選'**
+  String get filterApply;
+
+  /// No description provided for @filterDateRange.
+  ///
+  /// In zh, this message translates to:
+  /// **'日期範圍'**
+  String get filterDateRange;
+
+  /// No description provided for @filterAmountRange.
+  ///
+  /// In zh, this message translates to:
+  /// **'金額範圍'**
+  String get filterAmountRange;
+
+  /// No description provided for @filterUnlimited.
+  ///
+  /// In zh, this message translates to:
+  /// **'不限'**
+  String get filterUnlimited;
+
+  /// No description provided for @filterMin.
+  ///
+  /// In zh, this message translates to:
+  /// **'最小'**
+  String get filterMin;
+
+  /// No description provided for @filterMax.
+  ///
+  /// In zh, this message translates to:
+  /// **'最大'**
+  String get filterMax;
+
+  /// No description provided for @statsCategoryShare.
+  ///
+  /// In zh, this message translates to:
+  /// **'支出分類佔比'**
+  String get statsCategoryShare;
+
+  /// No description provided for @statsWeekExpense.
+  ///
+  /// In zh, this message translates to:
+  /// **'近 {days} 天支出'**
+  String statsWeekExpense(Object days);
+
+  /// No description provided for @statsHotspot.
+  ///
+  /// In zh, this message translates to:
+  /// **'消費熱點 Top 5'**
+  String get statsHotspot;
+
+  /// No description provided for @statsNoExpense.
+  ///
+  /// In zh, this message translates to:
+  /// **'尚無支出資料'**
+  String get statsNoExpense;
+
+  /// No description provided for @advancedReports.
+  ///
+  /// In zh, this message translates to:
+  /// **'進階報表（月度比較・年度・區間分析）'**
+  String get advancedReports;
 }
 
 class _AppLocalizationsDelegate

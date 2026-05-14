@@ -165,4 +165,132 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sectionAppearance => 'Appearance';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get notSet => 'Not set';
+
+  @override
+  String get appLock => 'App Lock (PIN)';
+
+  @override
+  String get appLockEnabled => 'Enabled';
+
+  @override
+  String get appLockDisabled => 'Disabled';
+
+  @override
+  String get biometric => 'Biometric Unlock';
+
+  @override
+  String get biometricSub => 'Fingerprint / Face';
+
+  @override
+  String get changePin => 'Change PIN';
+
+  @override
+  String get setPin => 'Set a 4-digit PIN';
+
+  @override
+  String get confirmPin => 'Re-enter PIN to confirm';
+
+  @override
+  String get menuBudgetHistory => 'Budget History';
+
+  @override
+  String get menuBudgetHistorySub => 'Monthly achievement trend';
+
+  @override
+  String get menuWallets => 'Wallets';
+
+  @override
+  String get menuWalletsSub => 'Cash, credit card, e-payment separately';
+
+  @override
+  String get menuCategories => 'Categories';
+
+  @override
+  String get menuCategoriesSub => 'Add and edit custom categories';
+
+  @override
+  String get menuRecurring => 'Recurring';
+
+  @override
+  String get menuRecurringSub => 'Rent, subscriptions and more';
+
+  @override
+  String get exportJson => 'Export JSON Backup';
+
+  @override
+  String get exportJsonSub => 'Full backup of all data';
+
+  @override
+  String get exportCsv => 'Export CSV';
+
+  @override
+  String get exportCsvSub => 'Open in Excel for reconciliation';
+
+  @override
+  String get importJson => 'Import JSON Backup';
+
+  @override
+  String get importJsonSub => 'Overwrites existing data';
+
+  @override
+  String get clearData => 'Clear All Data';
+
+  @override
+  String get clearDataSub => 'Cannot be undone';
+
+  @override
+  String get version => 'Version';
+
+  @override
+  String get sourceCode => 'Source Code';
+
+  @override
+  String get filterTitle => 'Filter';
+
+  @override
+  String get filterReset => 'Reset';
+
+  @override
+  String get filterApply => 'Apply Filter';
+
+  @override
+  String get filterDateRange => 'Date Range';
+
+  @override
+  String get filterAmountRange => 'Amount Range';
+
+  @override
+  String get filterUnlimited => 'Any';
+
+  @override
+  String get filterMin => 'Min';
+
+  @override
+  String get filterMax => 'Max';
+
+  @override
+  String get statsCategoryShare => 'Expense by Category';
+
+  @override
+  String statsWeekExpense(Object days) {
+    return 'Last $days Days';
+  }
+
+  @override
+  String get statsHotspot => 'Top 5 Hotspots';
+
+  @override
+  String get statsNoExpense => 'No expense data yet';
+
+  @override
+  String get advancedReports => 'Advanced Reports (compare, yearly, range)';
 }

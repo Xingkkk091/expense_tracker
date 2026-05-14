@@ -89,19 +89,24 @@ class _BootGateState extends State<_BootGate> {
   }
 
   Future<void> _bootstrap() async {
-    // 重複記帳：補產生待發生的交易
-    try {
-      await RecurringService().generateDue();
-    } catch (e, st) {
-      ErrorReporter().log('RecurringService.generateDue', e, st);
-    }
+    // 啟動關鍵路徑只查 onboarding/lock，盡快顯示畫面
     final seen = await OnboardingScreen.hasSeen();
+    if (!mounted) return;
     if (!seen) {
       setState(() => _stage = _BootStage.onboarding);
-      return;
+    } else {
+      final lock = await AuthService().isLockEnabled();
+      if (!mounted) return;
+      setState(() => _stage = lock ? _BootStage.locked : _BootStage.ready);
     }
-    final lock = await AuthService().isLockEnabled();
-    setState(() => _stage = lock ? _BootStage.locked : _BootStage.ready);
+    // 重複記帳補產生：移到背景執行，不阻塞啟動
+    Future.microtask(() async {
+      try {
+        await RecurringService().generateDue();
+      } catch (e, st) {
+        ErrorReporter().log('RecurringService.generateDue', e, st);
+      }
+    });
   }
 
   @override

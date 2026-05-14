@@ -6,6 +6,7 @@ import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../services/recurring_service.dart';
 import '../widgets/category_grid.dart';
+import '../theme/app_colors.dart';
 
 class RecurringManageScreen extends StatefulWidget {
   const RecurringManageScreen({super.key});
@@ -57,7 +58,7 @@ class _RecurringManageScreenState extends State<RecurringManageScreen> {
               child: const Text('取消')),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFB57C70)),
+                backgroundColor: AppColors.expense),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('刪除'),
           ),
@@ -162,8 +163,8 @@ class _RecurringManageScreenState extends State<RecurringManageScreen> {
                                 style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     color: r.isExpense
-                                        ? const Color(0xFFB57C70)
-                                        : const Color(0xFF7C9070)),
+                                        ? AppColors.expense
+                                        : AppColors.income),
                               ),
                               IconButton(
                                 padding: EdgeInsets.zero,
@@ -343,8 +344,8 @@ class _RecurringEditSheetState extends State<_RecurringEditSheet> {
   Widget _typeBtn(String label, bool expense) {
     final selected = _isExpense == expense;
     final color = expense
-        ? const Color(0xFFB57C70)
-        : const Color(0xFF7C9070);
+        ? AppColors.expense
+        : AppColors.income;
     return GestureDetector(
       onTap: () => setState(() => _isExpense = expense),
       child: Container(

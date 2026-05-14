@@ -15,6 +15,7 @@ import 'carrier_screen.dart';
 import 'invoice_scanner_screen.dart';
 import 'map_screen.dart';
 import 'statistics_screen.dart';
+import '../theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -333,8 +334,8 @@ class _TransactionListTab extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: dayTotal >= 0
-                            ? const Color(0xFF7C9070)
-                            : const Color(0xFFB57C70)),
+                            ? AppColors.income
+                            : AppColors.expense),
                   ),
                 ],
               ),
@@ -456,14 +457,14 @@ class _BalanceHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final l = AppLocalizations.of(context);
-    const expenseColor = Color(0xFFB57C70);
-    const incomeColor = Color(0xFF7C9070);
+    const expenseColor = AppColors.expense;
+    const incomeColor = AppColors.income;
 
     Color progressColor = incomeColor;
     if (budgetProgress >= 0.9) {
       progressColor = expenseColor;
     } else if (budgetProgress >= 0.7) {
-      progressColor = const Color(0xFFC9A86A);
+      progressColor = AppColors.warning;
     }
 
     return Container(

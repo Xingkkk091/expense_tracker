@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 
@@ -66,6 +67,7 @@ class _FilterSheetState extends State<FilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -89,14 +91,14 @@ class _FilterSheetState extends State<FilterSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('篩選',
-                    style: TextStyle(
+                Text(l.filterTitle,
+                    style: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.bold)),
-                TextButton(onPressed: _reset, child: const Text('重設')),
+                TextButton(onPressed: _reset, child: Text(l.filterReset)),
               ],
             ),
             const SizedBox(height: 8),
-            const Text('分類', style: TextStyle(fontWeight: FontWeight.w600)),
+            Text(l.category, style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -123,8 +125,8 @@ class _FilterSheetState extends State<FilterSheet> {
               }).toList(),
             ),
             const SizedBox(height: 20),
-            const Text('日期範圍',
-                style: TextStyle(fontWeight: FontWeight.w600)),
+            Text(l.filterDateRange,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickDateRange,
@@ -135,13 +137,13 @@ class _FilterSheetState extends State<FilterSheet> {
                   isDense: true,
                 ),
                 child: Text(_dateRange == null
-                    ? '不限'
+                    ? l.filterUnlimited
                     : '${_dateRange!.start.toString().substring(0, 10)} ~ ${_dateRange!.end.toString().substring(0, 10)}'),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('金額範圍',
-                style: TextStyle(fontWeight: FontWeight.w600)),
+            Text(l.filterAmountRange,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -149,9 +151,9 @@ class _FilterSheetState extends State<FilterSheet> {
                   child: TextField(
                     controller: _minCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                        hintText: '最小',
-                        border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                        hintText: l.filterMin,
+                        border: const OutlineInputBorder(),
                         isDense: true,
                         prefixText: '\$ '),
                   ),
@@ -164,9 +166,9 @@ class _FilterSheetState extends State<FilterSheet> {
                   child: TextField(
                     controller: _maxCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                        hintText: '最大',
-                        border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                        hintText: l.filterMax,
+                        border: const OutlineInputBorder(),
                         isDense: true,
                         prefixText: '\$ '),
                   ),
@@ -179,7 +181,7 @@ class _FilterSheetState extends State<FilterSheet> {
               child: FilledButton.icon(
                 onPressed: _apply,
                 icon: const Icon(Icons.check),
-                label: const Text('套用篩選'),
+                label: Text(l.filterApply),
                 style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(48)),
               ),

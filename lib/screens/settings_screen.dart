@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/transaction_provider.dart';
 import '../services/auth_service.dart';
 import '../services/backup_service.dart';
 import '../services/carrier_service.dart';
+import '../services/locale_controller.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -189,12 +191,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
-      appBar: AppBar(title: const Text('設定')),
+      appBar: AppBar(title: Text(l.settings)),
       body: ListView(
         children: [
-          _section('安全'),
+          _section(l.sectionAppearance),
+          _LanguageTile(l: l),
+          _section(l.sectionSecurity),
           SwitchListTile(
             secondary: const Icon(Icons.lock_outline),
             title: const Text('App 鎖（PIN）'),
@@ -227,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _setupPin,
             ),
 
-          _section('帳本'),
+          _section(l.sectionLedger),
           ListTile(
             leading: const Icon(Icons.savings),
             title: const Text('月預算'),
@@ -273,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
 
-          _section('資料'),
+          _section(l.sectionData),
           ListTile(
             leading: const Icon(Icons.file_upload),
             title: const Text('匯出 JSON 備份'),
@@ -300,7 +305,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: _clearAll,
           ),
 
-          _section('關於'),
+          _section(l.sectionAbout),
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('版本'),
@@ -364,6 +369,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
           fontWeight: FontWeight.w600,
           letterSpacing: 1,
         ),
+      ),
+    );
+  }
+}
+
+class _LanguageTile extends StatelessWidget {
+  final AppLocalizations l;
+  const _LanguageTile({required this.l});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<LocaleController>();
+    final current = controller.locale?.languageCode;
+    String currentLabel;
+    switch (current) {
+      case 'zh':
+        currentLabel = l.languageZh;
+        break;
+      case 'en':
+        currentLabel = l.languageEn;
+        break;
+      case 'ja':
+        currentLabel = l.languageJa;
+        break;
+      default:
+        currentLabel = l.languageSystem;
+    }
+    return ListTile(
+      leading: const Icon(Icons.language),
+      title: Text(l.language),
+      subtitle: Text(currentLabel),
+      onTap: () async {
+        final picked = await showDialog<String>(
+          context: context,
+          builder: (_) => SimpleDialog(
+            title: Text(l.language),
+            children: [
+              _opt(context, null, l.languageSystem, current),
+              _opt(context, 'zh', l.languageZh, current),
+              _opt(context, 'en', l.languageEn, current),
+              _opt(context, 'ja', l.languageJa, current),
+            ],
+          ),
+        );
+        if (picked != null) {
+          await controller.setLocale(
+              picked == '__system__' ? null : Locale(picked));
+        }
+      },
+    );
+  }
+
+  Widget _opt(
+      BuildContext context, String? code, String label, String? current) {
+    final selected = code == current;
+    return SimpleDialogOption(
+      onPressed: () => Navigator.pop(context, code ?? '__system__'),
+      child: Row(
+        children: [
+          Icon(
+            selected
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            size: 18,
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 12),
+          Text(label),
+        ],
       ),
     );
   }

@@ -86,6 +86,13 @@ class AppTheme {
       canvasColor: scheme.surfaceContainerLowest,
       textTheme: textTheme,
       hintColor: inkSoft,
+      // 日系：柔和的淡入轉場
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       dividerColor: scheme.outline,
       dividerTheme: DividerThemeData(
         color: scheme.outline,

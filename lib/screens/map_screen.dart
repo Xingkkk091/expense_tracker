@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +15,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  String? _categoryFilter; // null = 全部
+  String? _categoryFilter;
   final _mapController = MapController();
 
   @override
@@ -23,12 +24,22 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
+  /// 把同經緯度(取小數4位)的交易聚成同一個點，以便「點地點看歷史」
+  Map<String, List<Transaction>> _groupByLocation(List<Transaction> txs) {
+    final map = <String, List<Transaction>>{};
+    for (final t in txs) {
+      final key =
+          '${t.latitude!.toStringAsFixed(4)},${t.longitude!.toStringAsFixed(4)}';
+      map.putIfAbsent(key, () => []).add(t);
+    }
+    return map;
+  }
+
   @override
   Widget build(BuildContext context) {
     final txs = context.watch<TransactionProvider>().allTransactions;
-    var withLocation = txs
-        .where((t) => t.latitude != null && t.longitude != null)
-        .toList();
+    var withLocation =
+        txs.where((t) => t.latitude != null && t.longitude != null).toList();
     if (_categoryFilter != null) {
       withLocation =
           withLocation.where((t) => t.category == _categoryFilter).toList();
@@ -38,20 +49,11 @@ class _MapScreenState extends State<MapScreen> {
       return Stack(
         children: [
           const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.map_outlined, size: 72, color: Colors.grey),
-                SizedBox(height: 12),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    '此條件下沒有含位置的記錄',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ],
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Text('此條件下沒有含位置的記錄',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey)),
             ),
           ),
           _filterBar(),
@@ -59,10 +61,58 @@ class _MapScreenState extends State<MapScreen> {
       );
     }
 
-    final initialCenter = LatLng(
-      withLocation.first.latitude!,
-      withLocation.first.longitude!,
-    );
+    final groups = _groupByLocation(withLocation);
+    final initialCenter =
+        LatLng(withLocation.first.latitude!, withLocation.first.longitude!);
+
+    final markers = groups.entries.map((entry) {
+      final items = entry.value;
+      final first = items.first;
+      final cat = categoryOf(first.category);
+      return Marker(
+        point: LatLng(first.latitude!, first.longitude!),
+        width: 46,
+        height: 46,
+        child: GestureDetector(
+          onTap: () => _showLocationHistory(context, items),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: cat.color,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: Icon(cat.icon, color: Colors.white, size: 22),
+              ),
+              if (items.length > 1)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF3D3A34),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints:
+                        const BoxConstraints(minWidth: 18, minHeight: 18),
+                    child: Text('${items.length}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }).toList();
 
     return Stack(
       children: [
@@ -79,32 +129,29 @@ class _MapScreenState extends State<MapScreen> {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.expense_tracker',
             ),
-            MarkerLayer(
-              markers: withLocation.map((t) {
-                final cat = categoryOf(t.category);
-                return Marker(
-                  point: LatLng(t.latitude!, t.longitude!),
-                  width: 44,
-                  height: 44,
-                  child: GestureDetector(
-                    onTap: () => _showDetail(context, t),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: cat.color,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: const [
-                          BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 4,
-                              offset: Offset(0, 2)),
-                        ],
-                      ),
-                      child: Icon(cat.icon, color: Colors.white, size: 22),
+            MarkerClusterLayerWidget(
+              options: MarkerClusterLayerOptions(
+                maxClusterRadius: 48,
+                size: const Size(40, 40),
+                markers: markers,
+                builder: (context, clusterMarkers) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
                     ),
-                  ),
-                );
-              }).toList(),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${clusterMarkers.length}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -114,7 +161,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _filterBar() {
-    final theme = Theme.of(context);
+    final scheme = Theme.of(context).colorScheme;
     return Positioned(
       top: 8,
       left: 8,
@@ -124,36 +171,26 @@ class _MapScreenState extends State<MapScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface.withValues(alpha: 0.94),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: scheme.surface.withValues(alpha: 0.96),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: scheme.outline),
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                FilterChip(
-                  label: const Text('全部'),
-                  selected: _categoryFilter == null,
-                  onSelected: (_) => setState(() => _categoryFilter = null),
-                ),
-                const SizedBox(width: 4),
+                _chip('全部', _categoryFilter == null,
+                    () => setState(() => _categoryFilter = null)),
                 for (final c in kCategories)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: FilterChip(
-                      avatar: Icon(c.icon, size: 16, color: c.color),
-                      label: Text(c.label),
-                      selected: _categoryFilter == c.label,
-                      selectedColor: c.color.withValues(alpha: 0.25),
-                      onSelected: (s) => setState(
-                          () => _categoryFilter = s ? c.label : null),
+                    child: _chip(
+                      c.label,
+                      _categoryFilter == c.label,
+                      () => setState(() => _categoryFilter =
+                          _categoryFilter == c.label ? null : c.label),
+                      icon: c.icon,
+                      color: c.color,
                     ),
                   ),
               ],
@@ -164,67 +201,136 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _showDetail(BuildContext context, Transaction t) {
-    final cat = categoryOf(t.category);
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+  Widget _chip(String label, bool selected, VoidCallback onTap,
+      {IconData? icon, Color? color}) {
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? scheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+              color: selected ? scheme.primary : scheme.outline),
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: cat.color,
-                  child: Icon(cat.icon, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(t.title,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text(
-                          '${t.category} · ${DateFormat('MM/dd HH:mm').format(t.date)}',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).hintColor)),
-                    ],
-                  ),
-                ),
-                Text(
-                  '${t.isExpense ? '-' : '+'}\$${NumberFormat('#,##0').format(t.amount)}',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: t.isExpense
-                          ? Colors.red.shade500
-                          : Colors.green.shade600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (t.address.isNotEmpty)
-              Row(
-                children: [
-                  const Icon(Icons.location_on,
-                      size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Expanded(
-                      child: Text(t.address,
-                          style: const TextStyle(fontSize: 13))),
-                ],
-              ),
-            if (t.note.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(t.note, style: const TextStyle(fontSize: 13)),
+            if (icon != null) ...[
+              Icon(icon,
+                  size: 14,
+                  color: selected ? scheme.onPrimary : (color ?? scheme.onSurface)),
+              const SizedBox(width: 4),
             ],
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12,
+                    color:
+                        selected ? scheme.onPrimary : scheme.onSurface)),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 點地點 → 列出該地所有交易（歷史）
+  void _showLocationHistory(BuildContext context, List<Transaction> items) {
+    final fmt = NumberFormat('#,##0');
+    final total = items.fold<double>(
+        0, (s, t) => s + (t.isExpense ? t.amount : 0));
+    final addr = items.first.address;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        maxChildSize: 0.85,
+        minChildSize: 0.3,
+        builder: (context, scrollCtrl) {
+          return Column(
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.outline,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            addr.isEmpty ? '此地點' : addr,
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '共 ${items.length} 筆 · 累計支出 NT\$ ${fmt.format(total)}',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.separated(
+                  controller: scrollCtrl,
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, i) {
+                    final t = items[i];
+                    final cat = categoryOf(t.category);
+                    return ListTile(
+                      leading: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: cat.color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child:
+                            Icon(cat.icon, color: cat.color, size: 18),
+                      ),
+                      title: Text(t.title),
+                      subtitle: Text(
+                        '${t.category} · ${DateFormat('yyyy/MM/dd HH:mm').format(t.date)}',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      trailing: Text(
+                        '${t.isExpense ? '-' : '+'}\$${fmt.format(t.amount)}',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: t.isExpense
+                                ? const Color(0xFFB57C70)
+                                : const Color(0xFF7C9070)),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

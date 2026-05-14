@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'l10n/app_localizations.dart';
 import 'providers/transaction_provider.dart';
+import 'services/locale_controller.dart';
 import 'screens/app_lock_screen.dart';
 import 'screens/budget_history_screen.dart';
 import 'screens/carrier_screen.dart';
@@ -8,6 +11,7 @@ import 'screens/category_manage_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/recurring_manage_screen.dart';
+import 'screens/reports_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/wallet_manage_screen.dart';
 import 'services/auth_service.dart';
@@ -18,9 +22,14 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ErrorReporter().init();
+  final localeController = LocaleController();
+  await localeController.load();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => TransactionProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider.value(value: localeController),
+      ],
       child: const ExpenseTrackerApp(),
     ),
   );
@@ -31,12 +40,21 @@ class ExpenseTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = context.watch<LocaleController>().locale;
     return MaterialApp(
-      title: '記帳本',
+      onGenerateTitle: (ctx) => AppLocalizations.of(ctx).appTitle,
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.system,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      locale: locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: LocaleController.supported,
       routes: {
         '/settings': (_) => const SettingsScreen(),
         '/carrier': (_) => const CarrierScreen(),
@@ -44,6 +62,7 @@ class ExpenseTrackerApp extends StatelessWidget {
         '/wallets': (_) => const WalletManageScreen(),
         '/recurring': (_) => const RecurringManageScreen(),
         '/budget-history': (_) => const BudgetHistoryScreen(),
+        '/reports': (_) => const ReportsScreen(),
       },
       home: const _BootGate(),
     );

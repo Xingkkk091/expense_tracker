@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import '../l10n/app_localizations.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../services/invoice_parser.dart';
 import '../services/location_service.dart';
+import '../widgets/animated_widgets.dart';
 import '../widgets/calculator_keypad.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/place_search_field.dart';
@@ -167,15 +169,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final scheme = theme.colorScheme;
     final cat = categoryOf(_category);
     final templates = context.watch<TransactionProvider>().recentTemplates;
-    final fmt = NumberFormat('#,##0.##');
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existing != null ? '編輯記錄' : '新增記錄'),
+        title: Text(widget.existing != null ? l.editRecord : l.addRecord),
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('儲存'),
+            child: Text(l.save),
           ),
           const SizedBox(width: 4),
         ],
@@ -218,8 +220,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               fontSize: 16,
                               color: scheme.onSurfaceVariant)),
                     ),
-                    Text(
-                      fmt.format(_amount),
+                    AnimatedAmount(
+                      value: _amount,
                       style: TextStyle(
                         fontSize: 38,
                         fontWeight: FontWeight.w300,
@@ -363,7 +365,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               children: [
                 Icon(cat.icon, size: 18, color: scheme.onPrimary),
                 const SizedBox(width: 8),
-                Text(widget.existing != null ? '儲存修改' : '新增記錄',
+                Text(widget.existing != null ? l.saveChanges : l.addRecord,
                     style: const TextStyle(fontSize: 15)),
               ],
             ),

@@ -8,6 +8,8 @@ import '../services/update_service.dart';
 import '../widgets/filter_sheet.dart';
 import '../widgets/transaction_card.dart';
 import '../widgets/update_dialog.dart';
+import '../l10n/app_localizations.dart';
+import '../widgets/animated_widgets.dart';
 import 'add_transaction_screen.dart';
 import 'carrier_screen.dart';
 import 'invoice_scanner_screen.dart';
@@ -116,6 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final provider = context.watch<TransactionProvider>();
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
@@ -124,19 +127,19 @@ class _HomeScreenState extends State<HomeScreen> {
             ? TextField(
                 controller: _searchCtrl,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: '搜尋標題、地址、備註…',
+                decoration: InputDecoration(
+                  hintText: l.searchHint,
                   border: InputBorder.none,
                   filled: false,
                 ),
                 onChanged: provider.setSearch,
               )
-            : Text(_titleByTab),
+            : Text(_titleByTab(l)),
         actions: [
           if (_tab == 0) ...[
             IconButton(
               icon: Icon(_searching ? Icons.close : Icons.search),
-              tooltip: '搜尋',
+              tooltip: l.search,
               onPressed: () {
                 setState(() {
                   _searching = !_searching;
@@ -165,13 +168,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                 ],
               ),
-              tooltip: '篩選',
+              tooltip: l.filter,
               onPressed: _openFilter,
             ),
           ],
           IconButton(
             icon: const Icon(Icons.qr_code_2),
-            tooltip: '我的載具',
+            tooltip: l.myCarrier,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CarrierScreen()),
@@ -179,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: '設定',
+            tooltip: l.settings,
             onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
         ],
@@ -198,10 +201,13 @@ class _HomeScreenState extends State<HomeScreen> {
           _tab = i;
           if (i != 0) _searching = false;
         }),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.list_alt), label: '記錄'),
-          NavigationDestination(icon: Icon(Icons.pie_chart), label: '統計'),
-          NavigationDestination(icon: Icon(Icons.map), label: '地圖'),
+        destinations: [
+          NavigationDestination(
+              icon: const Icon(Icons.list_alt), label: l.navRecords),
+          NavigationDestination(
+              icon: const Icon(Icons.pie_chart), label: l.navStats),
+          NavigationDestination(
+              icon: const Icon(Icons.map), label: l.navMap),
         ],
       ),
       floatingActionButton: _tab == 0
@@ -218,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(color: theme.colorScheme.outline),
                   ),
-                  tooltip: '掃發票',
+                  tooltip: l.scanInvoice,
                   child: const Icon(Icons.qr_code_scanner),
                 ),
                 const SizedBox(height: 12),
@@ -230,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         builder: (_) => const AddTransactionScreen()),
                   ),
                   icon: const Icon(Icons.add),
-                  label: const Text('新增'),
+                  label: Text(l.add),
                 ),
               ],
             )
@@ -243,14 +249,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String get _titleByTab {
+  String _titleByTab(AppLocalizations l) {
     switch (_tab) {
       case 0:
-        return '我的記帳本';
+        return l.homeTitle;
       case 1:
-        return '統計分析';
+        return l.statsTitle;
       case 2:
-        return '消費地圖';
+        return l.mapTitle;
       default:
         return '';
     }
@@ -281,20 +287,10 @@ class _TransactionListTab extends StatelessWidget {
         if (provider.wallets.length > 1) _WalletFilterBar(provider: provider),
         Expanded(
           child: transactions.isEmpty
-              ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.receipt_long,
-                            size: 64, color: Colors.grey),
-                        SizedBox(height: 12),
-                        Text('此區間沒有記錄',
-                            style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  ),
+              ? EmptyState(
+                  icon: Icons.receipt_long,
+                  title: AppLocalizations.of(context).emptyRecords,
+                  subtitle: AppLocalizations.of(context).emptyRecordsHint,
                 )
               : _buildGroupedList(context, transactions, fmt),
         ),
@@ -309,6 +305,7 @@ class _TransactionListTab extends StatelessWidget {
       final key = DateFormat('yyyy/MM/dd').format(t.date);
       grouped.putIfAbsent(key, () => []).add(t);
     }
+    int runningIndex = 0;
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 80, top: 8),
       itemCount: grouped.length,
@@ -342,14 +339,17 @@ class _TransactionListTab extends StatelessWidget {
                 ],
               ),
             ),
-            ...items.map((t) => TransactionCard(
-                  transaction: t,
-                  onDelete: () => _confirmDelete(context, t),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            AddTransactionScreen(existing: t)),
+            ...items.map((t) => StaggeredItem(
+                  index: runningIndex++,
+                  child: TransactionCard(
+                    transaction: t,
+                    onDelete: () => _confirmDelete(context, t),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              AddTransactionScreen(existing: t)),
+                    ),
                   ),
                 )),
           ],
@@ -359,17 +359,18 @@ class _TransactionListTab extends StatelessWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, Transaction t) async {
-    // 改成「先刪除 + SnackBar 復原」流程，刪錯可立即復原
+    // 先刪除 + SnackBar 復原
     final provider = context.read<TransactionProvider>();
     final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
     await provider.remove(t.id);
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        content: Text('已刪除「${t.title}」'),
+        content: Text(l.deleted(t.title)),
         action: SnackBarAction(
-          label: '復原',
+          label: l.undo,
           onPressed: () => provider.add(t),
         ),
         duration: const Duration(seconds: 4),
@@ -394,7 +395,7 @@ class _WalletFilterBar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
             child: ChoiceChip(
-              label: const Text('全部錢包'),
+              label: Text(AppLocalizations.of(context).allWallets),
               selected: provider.walletFilter == null,
               onSelected: (_) => provider.setWalletFilter(null),
               labelStyle: TextStyle(
@@ -454,6 +455,7 @@ class _BalanceHeader extends StatelessWidget {
     final fmt = NumberFormat('#,##0');
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final l = AppLocalizations.of(context);
     const expenseColor = Color(0xFFB57C70);
     const incomeColor = Color(0xFF7C9070);
 
@@ -477,24 +479,25 @@ class _BalanceHeader extends StatelessWidget {
         children: [
           // 時間範圍切換
           SegmentedButton<TimeRange>(
-            segments: const [
-              ButtonSegment(value: TimeRange.week, label: Text('本週')),
-              ButtonSegment(value: TimeRange.month, label: Text('本月')),
-              ButtonSegment(value: TimeRange.all, label: Text('全部')),
+            segments: [
+              ButtonSegment(value: TimeRange.week, label: Text(l.rangeWeek)),
+              ButtonSegment(value: TimeRange.month, label: Text(l.rangeMonth)),
+              ButtonSegment(value: TimeRange.all, label: Text(l.rangeAll)),
             ],
             selected: {timeRange},
             onSelectionChanged: (s) => onChangeRange(s.first),
             showSelectedIcon: false,
           ),
           const SizedBox(height: 18),
-          Text(_rangeLabel,
+          Text(_rangeLabel(l),
               style: TextStyle(
                   color: cs.onSurfaceVariant,
                   fontSize: 12,
                   letterSpacing: 1)),
           const SizedBox(height: 4),
-          Text(
-            'NT\$ ${fmt.format(balance)}',
+          AnimatedAmount(
+            value: balance,
+            prefix: 'NT\$ ',
             style: TextStyle(
                 color: cs.onSurface,
                 fontSize: 32,
@@ -506,14 +509,14 @@ class _BalanceHeader extends StatelessWidget {
             children: [
               Expanded(
                 child: _MiniStat(
-                    label: '收入',
+                    label: l.income,
                     value: fmt.format(income),
                     color: incomeColor),
               ),
               Container(width: 1, height: 28, color: cs.outline),
               Expanded(
                 child: _MiniStat(
-                    label: '支出',
+                    label: l.expense,
                     value: fmt.format(expense),
                     color: expenseColor),
               ),
@@ -525,7 +528,7 @@ class _BalanceHeader extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('月預算',
+                Text(l.monthlyBudget,
                     style: TextStyle(
                         color: cs.onSurfaceVariant, fontSize: 11)),
                 Text(
@@ -553,14 +556,14 @@ class _BalanceHeader extends StatelessWidget {
     );
   }
 
-  String get _rangeLabel {
+  String _rangeLabel(AppLocalizations l) {
     switch (timeRange) {
       case TimeRange.week:
-        return '本週結餘';
+        return l.balanceWeek;
       case TimeRange.month:
-        return '本月結餘';
+        return l.balanceMonth;
       case TimeRange.all:
-        return '總結餘';
+        return l.balanceTotal;
     }
   }
 }

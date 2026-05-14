@@ -26,6 +26,15 @@ class StatisticsScreen extends StatelessWidget {
             expense: provider.totalExpense,
             balance: provider.balance,
           ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.pushNamed(context, '/reports'),
+            icon: const Icon(Icons.insights, size: 18),
+            label: const Text('進階報表（月度比較・年度・區間分析）'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(44),
+            ),
+          ),
           const SizedBox(height: 16),
 
           if (total == 0)

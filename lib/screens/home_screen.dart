@@ -181,6 +181,11 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (_) => const CarrierScreen()),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: '設定',
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+          ),
         ],
       ),
       body: IndexedStack(
@@ -357,24 +362,22 @@ class _TransactionListTab extends StatelessWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, Transaction t) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('確認刪除'),
-        content: Text('確定要刪除「${t.title}」嗎？'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('取消')),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('刪除', style: TextStyle(color: Colors.red))),
-        ],
+    // 改成「先刪除 + SnackBar 復原」流程，刪錯可立即復原
+    final provider = context.read<TransactionProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    await provider.remove(t.id);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text('已刪除「${t.title}」'),
+        action: SnackBarAction(
+          label: '復原',
+          onPressed: () => provider.add(t),
+        ),
+        duration: const Duration(seconds: 4),
       ),
     );
-    if (confirmed == true && context.mounted) {
-      context.read<TransactionProvider>().remove(t.id);
-    }
   }
 }
 
@@ -414,7 +417,7 @@ class _BalanceHeader extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [cs.primary, cs.primary.withOpacity(0.85)],
+          colors: [cs.primary, cs.primary.withValues(alpha: 0.85)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -438,7 +441,7 @@ class _BalanceHeader extends StatelessWidget {
                 if (states.contains(WidgetState.selected)) {
                   return Colors.white;
                 }
-                return Colors.white.withOpacity(0.15);
+                return Colors.white.withValues(alpha: 0.15);
               }),
               foregroundColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) {
@@ -447,12 +450,12 @@ class _BalanceHeader extends StatelessWidget {
                 return Colors.white;
               }),
               side: WidgetStateProperty.all(
-                  BorderSide(color: Colors.white.withOpacity(0.5))),
+                  BorderSide(color: Colors.white.withValues(alpha: 0.5))),
             ),
           ),
           const SizedBox(height: 16),
           Text(_rangeLabel,
-              style: TextStyle(color: cs.onPrimary.withOpacity(0.85), fontSize: 13)),
+              style: TextStyle(color: cs.onPrimary.withValues(alpha: 0.85), fontSize: 13)),
           const SizedBox(height: 2),
           Text(
             '\$${fmt.format(balance)}',
@@ -484,7 +487,7 @@ class _BalanceHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(

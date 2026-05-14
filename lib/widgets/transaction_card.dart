@@ -47,7 +47,7 @@ class TransactionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(
+                color: Colors.black.withValues(alpha: 
                     theme.brightness == Brightness.dark ? 0.25 : 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
@@ -74,7 +74,7 @@ class TransactionCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: cat.color.withOpacity(0.15),
+                    color: cat.color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(cat.icon, color: cat.color, size: 22),

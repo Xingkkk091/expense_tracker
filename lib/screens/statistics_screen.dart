@@ -235,20 +235,27 @@ class _Legend extends StatelessWidget {
   }
 }
 
-class _WeeklyBarChart extends StatelessWidget {
+class _WeeklyBarChart extends StatefulWidget {
   final List<Transaction> transactions;
   const _WeeklyBarChart({required this.transactions});
 
   @override
+  State<_WeeklyBarChart> createState() => _WeeklyBarChartState();
+}
+
+class _WeeklyBarChartState extends State<_WeeklyBarChart> {
+  int _rangeDays = 7;
+
+  @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final days = List.generate(7, (i) {
-      final d = now.subtract(Duration(days: 6 - i));
+    final days = List.generate(_rangeDays, (i) {
+      final d = now.subtract(Duration(days: _rangeDays - 1 - i));
       return DateTime(d.year, d.month, d.day);
     });
 
     final amounts = days.map((day) {
-      return transactions
+      return widget.transactions
           .where((t) =>
               t.isExpense &&
               t.date.year == day.year &&
@@ -257,7 +264,9 @@ class _WeeklyBarChart extends StatelessWidget {
           .fold(0.0, (sum, t) => sum + t.amount);
     }).toList();
 
-    final maxValue = amounts.reduce((a, b) => a > b ? a : b);
+    final maxValue = amounts.isEmpty
+        ? 0.0
+        : amounts.reduce((a, b) => a > b ? a : b);
     final maxY = maxValue <= 0 ? 100.0 : (maxValue * 1.2).ceilToDouble();
 
     return Card(
@@ -267,22 +276,44 @@ class _WeeklyBarChart extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionTitle(
-                icon: Icons.bar_chart, title: '近 7 天支出'),
+            Row(
+              children: [
+                _SectionTitle(
+                    icon: Icons.bar_chart, title: '近 $_rangeDays 天支出'),
+                const Spacer(),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 7, label: Text('7日')),
+                    ButtonSegment(value: 30, label: Text('30日')),
+                    ButtonSegment(value: 90, label: Text('90日')),
+                  ],
+                  selected: {_rangeDays},
+                  onSelectionChanged: (s) =>
+                      setState(() => _rangeDays = s.first),
+                  style: ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: WidgetStateProperty.all(
+                        const TextStyle(fontSize: 11)),
+                    padding: WidgetStateProperty.all(
+                        const EdgeInsets.symmetric(horizontal: 4)),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             SizedBox(
               height: 180,
               child: BarChart(
                 BarChartData(
                   maxY: maxY,
-                  barGroups: List.generate(7, (i) {
+                  barGroups: List.generate(_rangeDays, (i) {
                     return BarChartGroupData(
                       x: i,
                       barRods: [
                         BarChartRodData(
                           toY: amounts[i],
                           color: Theme.of(context).colorScheme.primary,
-                          width: 16,
+                          width: _rangeDays > 30 ? 4 : (_rangeDays > 7 ? 8 : 16),
                           borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(4)),
                         )
@@ -300,11 +331,18 @@ class _WeeklyBarChart extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          final d = days[value.toInt()];
+                          final i = value.toInt();
+                          if (i < 0 || i >= days.length) {
+                            return const SizedBox.shrink();
+                          }
+                          // 多日時只顯示每幾天一個標籤避免擠在一起
+                          final step = _rangeDays > 30 ? 14 : (_rangeDays > 7 ? 5 : 1);
+                          if (i % step != 0) return const SizedBox.shrink();
+                          final d = days[i];
                           return Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text('${d.month}/${d.day}',
-                                style: const TextStyle(fontSize: 10)),
+                                style: const TextStyle(fontSize: 9)),
                           );
                         },
                       ),

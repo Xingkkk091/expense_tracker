@@ -35,7 +35,16 @@ class _InvoiceScannerScreenState extends State<InvoiceScannerScreen> {
         Navigator.pop(context, invoice);
         return;
       } else {
-        setState(() => _lastError = '不是有效的電子發票 QR Code');
+        // 分辨可能原因，給更有用的提示
+        String hint;
+        if (raw.startsWith('**')) {
+          hint = '掃到右方碼，請改掃左方 QR';
+        } else if (raw.length < 30) {
+          hint = '掃到其他 QR (內容: ${raw.length > 16 ? "${raw.substring(0, 16)}..." : raw})';
+        } else {
+          hint = '無法解析此 QR，請確認是電子發票左方碼';
+        }
+        setState(() => _lastError = hint);
       }
     }
   }

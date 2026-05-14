@@ -21,13 +21,20 @@ class PlaceResult {
 /// https://nominatim.org/release-docs/develop/api/Search/
 class PlaceSearchService {
   static const _endpoint = 'https://nominatim.openstreetmap.org/search';
-  // Nominatim 要求帶 User-Agent
-  static const _ua = 'expense_tracker/1.0 (https://github.com/Xingkkk091/expense_tracker)';
+  static const _ua =
+      'expense_tracker/1.0 (https://github.com/Xingkkk091/expense_tracker)';
+  // Naive LRU-like cache (in-memory only)
+  static final Map<String, List<PlaceResult>> _cache = {};
+  static const int _maxCacheEntries = 50;
 
   Future<List<PlaceResult>> search(String query,
       {String language = 'zh-TW', int limit = 8}) async {
     final q = query.trim();
     if (q.isEmpty) return [];
+
+    final cacheKey = '$language|$q';
+    final cached = _cache[cacheKey];
+    if (cached != null) return cached;
 
     final uri = Uri.parse(_endpoint).replace(queryParameters: {
       'q': q,
@@ -38,18 +45,32 @@ class PlaceSearchService {
       'accept-language': language,
     });
 
-    try {
-      final resp = await http.get(uri, headers: {
-        'User-Agent': _ua,
-      }).timeout(const Duration(seconds: 8));
-      if (resp.statusCode != 200) return [];
+    // 重試 2 次（網路偶發失敗）
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final resp = await http.get(uri, headers: {
+          'User-Agent': _ua,
+        }).timeout(const Duration(seconds: 8));
+        if (resp.statusCode != 200) continue;
 
-      final body = utf8.decode(resp.bodyBytes);
-      final list = json.decode(body) as List<dynamic>;
-      return list.map((e) => _fromJson(e as Map<String, dynamic>)).toList();
-    } catch (_) {
-      return [];
+        final body = utf8.decode(resp.bodyBytes);
+        final list = json.decode(body) as List<dynamic>;
+        final results =
+            list.map((e) => _fromJson(e as Map<String, dynamic>)).toList();
+        _putCache(cacheKey, results);
+        return results;
+      } catch (_) {
+        if (attempt == 1) return [];
+      }
     }
+    return [];
+  }
+
+  void _putCache(String key, List<PlaceResult> value) {
+    if (_cache.length >= _maxCacheEntries) {
+      _cache.remove(_cache.keys.first);
+    }
+    _cache[key] = value;
   }
 
   PlaceResult _fromJson(Map<String, dynamic> j) {

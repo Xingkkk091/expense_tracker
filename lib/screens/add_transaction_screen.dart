@@ -121,17 +121,35 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Future<void> _getLocation() async {
     setState(() => _loadingLocation = true);
-    final result = await LocationService().getCurrentLocation();
-    setState(() => _loadingLocation = false);
-    if (result != null) {
+    try {
+      final result = await LocationService().getCurrentLocation();
+      if (!mounted) return;
       setState(() {
         _lat = result.latitude;
         _lng = result.longitude;
         _addressCtrl.text = result.address;
+        _loadingLocation = false;
       });
-    } else if (mounted) {
+    } on LocationFailure catch (f) {
+      if (!mounted) return;
+      setState(() => _loadingLocation = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('無法取得位置，請確認已開啟定位權限')),
+        SnackBar(
+          content: Text(f.message),
+          behavior: SnackBarBehavior.floating,
+          action: f.reason == LocationFailureReason.permissionDeniedForever
+              ? SnackBarAction(
+                  label: '開啟設定',
+                  onPressed: () {/* requires app_settings package; skip */},
+                )
+              : null,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadingLocation = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('無法取得位置：$e')),
       );
     }
   }
@@ -361,7 +379,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   color: theme.hintColor,
                   fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          AmountKeypad(onKeyTap: _onKey, onBackspace: _onBackspace),
+          AmountKeypad(
+            onKeyTap: _onKey,
+            onBackspace: _onBackspace,
+            onQuickAdd: (v) {
+              final current = double.tryParse(_amountText) ?? 0;
+              setState(() {
+                final n = current + v;
+                _amountText = n == n.truncateToDouble()
+                    ? n.toStringAsFixed(0)
+                    : n.toStringAsFixed(2);
+              });
+            },
+          ),
           const SizedBox(height: 16),
 
           // 儲存按鈕
@@ -408,7 +438,7 @@ class _TypeButton extends StatelessWidget {
           color: selected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border:
-              Border.all(color: Colors.white.withOpacity(selected ? 1 : 0.5)),
+              Border.all(color: Colors.white.withValues(alpha: selected ? 1 : 0.5)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

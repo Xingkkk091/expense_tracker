@@ -27,7 +27,7 @@ class CategoryGrid extends StatelessWidget {
         final cat = kCategories[i];
         final isSelected = cat.label == selected;
         return Material(
-          color: isSelected ? cat.color : cat.color.withOpacity(0.12),
+          color: isSelected ? cat.color : cat.color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),

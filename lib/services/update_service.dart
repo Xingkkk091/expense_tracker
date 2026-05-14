@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
+import 'error_reporter.dart';
 
 class UpdateInfo {
   final String version;
@@ -54,7 +56,8 @@ class UpdateService {
         );
       }
       return null;
-    } catch (_) {
+    } catch (e, st) {
+      ErrorReporter().log('UpdateService.check', e, st);
       return null;
     }
   }
@@ -63,8 +66,12 @@ class UpdateService {
     final l = latest.split('.').map((s) => int.tryParse(s) ?? 0).toList();
     final c = current.split('.').map((s) => int.tryParse(s) ?? 0).toList();
     final len = l.length > c.length ? l.length : c.length;
-    while (l.length < len) l.add(0);
-    while (c.length < len) c.add(0);
+    while (l.length < len) {
+      l.add(0);
+    }
+    while (c.length < len) {
+      c.add(0);
+    }
     for (int i = 0; i < len; i++) {
       if (l[i] > c[i]) return true;
       if (l[i] < c[i]) return false;
@@ -92,7 +99,8 @@ class UpdateService {
         },
       );
       return file;
-    } catch (_) {
+    } catch (e, st) {
+      ErrorReporter().log('UpdateService.download', e, st);
       return null;
     }
   }

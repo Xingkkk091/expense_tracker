@@ -1,8 +1,11 @@
 import 'package:barcode_widget/barcode_widget.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../services/carrier_service.dart';
@@ -31,6 +34,8 @@ class _CarrierScreenState extends State<CarrierScreen>
   String _category = '餐飲';
   final _titleCtrl = TextEditingController();
 
+  double? _prevBrightness;
+
   @override
   void initState() {
     super.initState();
@@ -39,13 +44,36 @@ class _CarrierScreenState extends State<CarrierScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
+    _enableScreenWake();
   }
 
   @override
   void dispose() {
     _titleCtrl.dispose();
     _pulseCtrl.dispose();
+    _restoreScreenWake();
     super.dispose();
+  }
+
+  Future<void> _enableScreenWake() async {
+    try {
+      await WakelockPlus.enable();
+      _prevBrightness = await ScreenBrightness.instance.application;
+      await ScreenBrightness.instance.setApplicationScreenBrightness(1.0);
+    } catch (e) {
+      debugPrint('enableScreenWake failed: $e');
+    }
+  }
+
+  Future<void> _restoreScreenWake() async {
+    try {
+      await WakelockPlus.disable();
+      if (_prevBrightness != null) {
+        await ScreenBrightness.instance.resetApplicationScreenBrightness();
+      }
+    } catch (e) {
+      debugPrint('restoreScreenWake failed: $e');
+    }
   }
 
   Future<void> _load() async {
@@ -317,7 +345,7 @@ class _CarrierScreenState extends State<CarrierScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: cardColor.withOpacity(isDark ? 0.5 : 0.3),
+            color: cardColor.withValues(alpha: isDark ? 0.5 : 0.3),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -334,7 +362,7 @@ class _CarrierScreenState extends State<CarrierScreen>
               height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -346,7 +374,7 @@ class _CarrierScreenState extends State<CarrierScreen>
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -375,7 +403,7 @@ class _CarrierScreenState extends State<CarrierScreen>
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: accent.withOpacity(
+                            color: accent.withValues(alpha: 
                                 0.4 + _pulseCtrl.value * 0.6),
                             shape: BoxShape.circle,
                           ),
@@ -427,10 +455,10 @@ class _CarrierScreenState extends State<CarrierScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: Colors.white.withOpacity(0.2), width: 1),
+                        color: Colors.white.withValues(alpha: 0.2), width: 1),
                   ),
                   child: Row(
                     children: [
@@ -474,13 +502,13 @@ class _CarrierScreenState extends State<CarrierScreen>
                 Row(
                   children: [
                     Icon(Icons.info_outline,
-                        color: Colors.white.withOpacity(0.7), size: 14),
+                        color: Colors.white.withValues(alpha: 0.7), size: 14),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         '請將螢幕對準掃描器，必要時將亮度調至最高',
                         style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 11),
                       ),
                     ),
@@ -498,7 +526,7 @@ class _CarrierScreenState extends State<CarrierScreen>
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -549,7 +577,7 @@ class _CarrierScreenState extends State<CarrierScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
+            color: Colors.black.withValues(alpha: 
                 theme.brightness == Brightness.dark ? 0.3 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -566,7 +594,7 @@ class _CarrierScreenState extends State<CarrierScreen>
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(Icons.flash_on,
@@ -601,13 +629,13 @@ class _CarrierScreenState extends State<CarrierScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  theme.colorScheme.primary.withOpacity(0.1),
-                  theme.colorScheme.primary.withOpacity(0.04),
+                  theme.colorScheme.primary.withValues(alpha: 0.1),
+                  theme.colorScheme.primary.withValues(alpha: 0.04),
                 ],
               ),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.2)),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.2)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -711,7 +739,7 @@ class _MiniKeypad extends StatelessWidget {
         final isBackspace = k == '⌫';
         return Material(
           color: isBackspace
-              ? theme.colorScheme.errorContainer.withOpacity(0.4)
+              ? theme.colorScheme.errorContainer.withValues(alpha: 0.4)
               : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
           child: InkWell(

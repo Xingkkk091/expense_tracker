@@ -52,6 +52,23 @@ class TransactionProvider extends ChangeNotifier {
   TransactionFilter _filter = const TransactionFilter();
   double _monthlyBudget = 0;
 
+  // === Memoization cache ===
+  List<Transaction>? _filteredCache;
+  double? _incomeCache;
+  double? _expenseCache;
+  double? _monthExpenseCache;
+  Map<String, double>? _byCategoryCache;
+  List<MapEntry<String, double>>? _hotspotsCache;
+
+  void _invalidate() {
+    _filteredCache = null;
+    _incomeCache = null;
+    _expenseCache = null;
+    _monthExpenseCache = null;
+    _byCategoryCache = null;
+    _hotspotsCache = null;
+  }
+
   TimeRange get timeRange => _timeRange;
   String get search => _search;
   TransactionFilter get filter => _filter;
@@ -59,8 +76,9 @@ class TransactionProvider extends ChangeNotifier {
 
   List<Transaction> get allTransactions => _all;
 
-  /// 套用搜尋 + filter + 時間範圍後的清單（給首頁列表用）
+  /// 套用搜尋 + filter + 時間範圍後的清單（給首頁列表用），結果被快取
   List<Transaction> get transactions {
+    if (_filteredCache != null) return _filteredCache!;
     Iterable<Transaction> result = _all;
 
     // 時間範圍
@@ -99,24 +117,34 @@ class TransactionProvider extends ChangeNotifier {
       result = result.where((t) => t.amount <= _filter.maxAmount!);
     }
 
-    return result.toList();
+    _filteredCache = result.toList();
+    return _filteredCache!;
   }
 
-  double get totalIncome =>
-      transactions.where((t) => !t.isExpense).fold(0, (s, t) => s + t.amount);
+  double get totalIncome {
+    if (_incomeCache != null) return _incomeCache!;
+    return _incomeCache = transactions
+        .where((t) => !t.isExpense)
+        .fold<double>(0, (s, t) => s + t.amount);
+  }
 
-  double get totalExpense =>
-      transactions.where((t) => t.isExpense).fold(0, (s, t) => s + t.amount);
+  double get totalExpense {
+    if (_expenseCache != null) return _expenseCache!;
+    return _expenseCache = transactions
+        .where((t) => t.isExpense)
+        .fold<double>(0, (s, t) => s + t.amount);
+  }
 
   double get balance => totalIncome - totalExpense;
 
   /// 本月支出（給預算進度條用，固定本月不受 timeRange 影響）
   double get monthExpense {
+    if (_monthExpenseCache != null) return _monthExpenseCache!;
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, 1);
-    return _all
+    return _monthExpenseCache = _all
         .where((t) => t.isExpense && !t.date.isBefore(start))
-        .fold(0.0, (s, t) => s + t.amount);
+        .fold<double>(0.0, (s, t) => s + t.amount);
   }
 
   double get budgetProgress {
@@ -125,11 +153,12 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   Map<String, double> get expenseByCategory {
+    if (_byCategoryCache != null) return _byCategoryCache!;
     final Map<String, double> map = {};
     for (final t in transactions.where((t) => t.isExpense)) {
       map[t.category] = (map[t.category] ?? 0) + t.amount;
     }
-    return map;
+    return _byCategoryCache = map;
   }
 
   /// 最近使用範本（依「標題+分類」分組取最近 5 筆）
@@ -146,8 +175,9 @@ class TransactionProvider extends ChangeNotifier {
     return out;
   }
 
-  /// 消費熱點 Top 5（依地址聚合）
+  /// 消費熱點 Top 5（依地址聚合），快取
   List<MapEntry<String, double>> get hotspots {
+    if (_hotspotsCache != null) return _hotspotsCache!;
     final Map<String, double> map = {};
     for (final t in _all
         .where((t) => t.isExpense && t.address.trim().isNotEmpty)) {
@@ -155,12 +185,13 @@ class TransactionProvider extends ChangeNotifier {
     }
     final list = map.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    return list.take(5).toList();
+    return _hotspotsCache = list.take(5).toList();
   }
 
   Future<void> load() async {
     _all = await _db.getAll();
     _monthlyBudget = await _budgetService.getMonthlyBudget();
+    _invalidate();
     notifyListeners();
   }
 
@@ -181,27 +212,32 @@ class TransactionProvider extends ChangeNotifier {
 
   void setTimeRange(TimeRange r) {
     _timeRange = r;
+    _invalidate();
     notifyListeners();
   }
 
   void setSearch(String s) {
     _search = s;
+    _invalidate();
     notifyListeners();
   }
 
   void setFilter(TransactionFilter f) {
     _filter = f;
+    _invalidate();
     notifyListeners();
   }
 
   void clearFilter() {
     _filter = const TransactionFilter();
+    _invalidate();
     notifyListeners();
   }
 
   Future<void> setMonthlyBudget(double value) async {
     _monthlyBudget = value;
     await _budgetService.setMonthlyBudget(value);
+    _invalidate();
     notifyListeners();
   }
 }

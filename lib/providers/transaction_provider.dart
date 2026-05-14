@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/transaction.dart';
 import '../services/database_service.dart';
 import '../services/budget_service.dart';
+import '../services/category_service.dart';
+import '../services/wallet_service.dart';
 
 enum TimeRange { week, month, all }
 
@@ -45,12 +47,16 @@ class TransactionFilter {
 class TransactionProvider extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final BudgetService _budgetService = BudgetService();
+  final CategoryService _categoryService = CategoryService();
+  final WalletService _walletService = WalletService();
 
   List<Transaction> _all = [];
   TimeRange _timeRange = TimeRange.month;
   String _search = '';
   TransactionFilter _filter = const TransactionFilter();
   double _monthlyBudget = 0;
+  String? _walletFilter; // null = 全部錢包
+  List<WalletInfo> _wallets = [];
 
   // === Memoization cache ===
   List<Transaction>? _filteredCache;
@@ -73,13 +79,33 @@ class TransactionProvider extends ChangeNotifier {
   String get search => _search;
   TransactionFilter get filter => _filter;
   double get monthlyBudget => _monthlyBudget;
+  String? get walletFilter => _walletFilter;
+  List<WalletInfo> get wallets => _wallets;
 
   List<Transaction> get allTransactions => _all;
 
-  /// 套用搜尋 + filter + 時間範圍後的清單（給首頁列表用），結果被快取
+  /// 各錢包餘額（收入−支出，全期間）
+  Map<String, double> get walletBalances {
+    final map = <String, double>{};
+    for (final w in _wallets) {
+      map[w.name] = 0;
+    }
+    for (final t in _all) {
+      map[t.wallet] =
+          (map[t.wallet] ?? 0) + (t.isExpense ? -t.amount : t.amount);
+    }
+    return map;
+  }
+
+  /// 套用搜尋 + filter + 時間範圍 + 錢包後的清單（給首頁列表用），結果被快取
   List<Transaction> get transactions {
     if (_filteredCache != null) return _filteredCache!;
     Iterable<Transaction> result = _all;
+
+    // 錢包篩選
+    if (_walletFilter != null) {
+      result = result.where((t) => t.wallet == _walletFilter);
+    }
 
     // 時間範圍
     final now = DateTime.now();
@@ -191,6 +217,23 @@ class TransactionProvider extends ChangeNotifier {
   Future<void> load() async {
     _all = await _db.getAll();
     _monthlyBudget = await _budgetService.getMonthlyBudget();
+    await _categoryService.loadIntoRegistry();
+    await _walletService.ensureDefault();
+    _wallets = await _walletService.getAll();
+    _invalidate();
+    notifyListeners();
+  }
+
+  /// 重新載入分類與錢包設定（自訂分類/錢包變更後呼叫）
+  Future<void> reloadMeta() async {
+    await _categoryService.loadIntoRegistry();
+    _wallets = await _walletService.getAll();
+    _invalidate();
+    notifyListeners();
+  }
+
+  void setWalletFilter(String? wallet) {
+    _walletFilter = wallet;
     _invalidate();
     notifyListeners();
   }

@@ -278,6 +278,7 @@ class _TransactionListTab extends StatelessWidget {
           monthExpense: provider.monthExpense,
           budgetProgress: provider.budgetProgress,
         ),
+        if (provider.wallets.length > 1) _WalletFilterBar(provider: provider),
         Expanded(
           child: transactions.isEmpty
               ? const Center(
@@ -372,6 +373,58 @@ class _TransactionListTab extends StatelessWidget {
           onPressed: () => provider.add(t),
         ),
         duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+}
+
+class _WalletFilterBar extends StatelessWidget {
+  final TransactionProvider provider;
+  const _WalletFilterBar({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+            child: ChoiceChip(
+              label: const Text('全部錢包'),
+              selected: provider.walletFilter == null,
+              onSelected: (_) => provider.setWalletFilter(null),
+              labelStyle: TextStyle(
+                  fontSize: 12,
+                  color: provider.walletFilter == null
+                      ? scheme.onPrimary
+                      : scheme.onSurface),
+            ),
+          ),
+          for (final w in provider.wallets)
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+              child: ChoiceChip(
+                avatar: Icon(w.icon,
+                    size: 15,
+                    color: provider.walletFilter == w.name
+                        ? scheme.onPrimary
+                        : scheme.onSurfaceVariant),
+                label: Text(w.name),
+                selected: provider.walletFilter == w.name,
+                onSelected: (_) => provider.setWalletFilter(w.name),
+                labelStyle: TextStyle(
+                    fontSize: 12,
+                    color: provider.walletFilter == w.name
+                        ? scheme.onPrimary
+                        : scheme.onSurface),
+              ),
+            ),
+        ],
       ),
     );
   }

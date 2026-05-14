@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 /// 計算機式金額輸入鍵盤（算盤）
@@ -51,6 +52,7 @@ class _CalculatorKeypadState extends State<CalculatorKeypad> {
   void _emit() => widget.onChanged(_result);
 
   void _input(String k) {
+    HapticFeedback.selectionClick();
     setState(() {
       switch (k) {
         case 'AC':

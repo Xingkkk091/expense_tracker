@@ -11,6 +11,7 @@ class Transaction {
   final double? latitude;
   final double? longitude;
   final DateTime date;
+  final String wallet; // 帳本/錢包名稱
 
   Transaction({
     required this.id,
@@ -23,7 +24,35 @@ class Transaction {
     this.latitude,
     this.longitude,
     required this.date,
+    this.wallet = kDefaultWallet,
   });
+
+  Transaction copyWith({
+    String? title,
+    double? amount,
+    bool? isExpense,
+    String? category,
+    String? note,
+    String? address,
+    double? latitude,
+    double? longitude,
+    DateTime? date,
+    String? wallet,
+  }) {
+    return Transaction(
+      id: id,
+      title: title ?? this.title,
+      amount: amount ?? this.amount,
+      isExpense: isExpense ?? this.isExpense,
+      category: category ?? this.category,
+      note: note ?? this.note,
+      address: address ?? this.address,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      date: date ?? this.date,
+      wallet: wallet ?? this.wallet,
+    );
+  }
 
   Map<String, dynamic> toMap() => {
         'id': id,
@@ -36,6 +65,7 @@ class Transaction {
         'latitude': latitude,
         'longitude': longitude,
         'date': date.toIso8601String(),
+        'wallet': wallet,
       };
 
   factory Transaction.fromMap(Map<String, dynamic> map) => Transaction(
@@ -49,8 +79,11 @@ class Transaction {
         latitude: map['latitude'],
         longitude: map['longitude'],
         date: DateTime.parse(map['date']),
+        wallet: (map['wallet'] as String?) ?? kDefaultWallet,
       );
 }
+
+const String kDefaultWallet = '現金';
 
 class CategoryInfo {
   final String label;
@@ -59,19 +92,42 @@ class CategoryInfo {
   const CategoryInfo(this.label, this.icon, this.color);
 }
 
-const List<CategoryInfo> kCategories = [
-  CategoryInfo('餐飲', Icons.restaurant,         Color(0xFFFF7043)),
-  CategoryInfo('交通', Icons.directions_car,     Color(0xFF42A5F5)),
-  CategoryInfo('購物', Icons.shopping_bag,       Color(0xFFAB47BC)),
-  CategoryInfo('娛樂', Icons.sports_esports,     Color(0xFFEC407A)),
-  CategoryInfo('醫療', Icons.medical_services,   Color(0xFFEF5350)),
-  CategoryInfo('住房', Icons.home,               Color(0xFF26A69A)),
-  CategoryInfo('教育', Icons.school,             Color(0xFF7E57C2)),
-  CategoryInfo('薪資', Icons.payments,           Color(0xFF66BB6A)),
-  CategoryInfo('其他', Icons.more_horiz,         Color(0xFF78909C)),
+/// 內建分類
+const List<CategoryInfo> kBuiltInCategories = [
+  CategoryInfo('餐飲', Icons.restaurant, Color(0xFFC17B6F)),
+  CategoryInfo('交通', Icons.directions_car, Color(0xFF6E8CA0)),
+  CategoryInfo('購物', Icons.shopping_bag, Color(0xFF9B8AA6)),
+  CategoryInfo('娛樂', Icons.sports_esports, Color(0xFFB58AA0)),
+  CategoryInfo('醫療', Icons.medical_services, Color(0xFFB57C70)),
+  CategoryInfo('住房', Icons.home, Color(0xFF6F9089)),
+  CategoryInfo('教育', Icons.school, Color(0xFF8A86A6)),
+  CategoryInfo('薪資', Icons.payments, Color(0xFF7C9070)),
+  CategoryInfo('其他', Icons.more_horiz, Color(0xFF8C8678)),
 ];
 
-CategoryInfo categoryOf(String label) => kCategories.firstWhere(
+/// 動態分類登錄表（內建 + 使用者自訂）。
+/// 在 App 啟動時由 CategoryService 載入自訂分類後 setCustom。
+class CategoryRegistry {
+  CategoryRegistry._();
+  static final CategoryRegistry instance = CategoryRegistry._();
+
+  List<CategoryInfo> _custom = [];
+
+  List<CategoryInfo> get all => [...kBuiltInCategories, ..._custom];
+  List<CategoryInfo> get custom => List.unmodifiable(_custom);
+
+  void setCustom(List<CategoryInfo> custom) {
+    _custom = custom;
+  }
+
+  bool isBuiltIn(String label) =>
+      kBuiltInCategories.any((c) => c.label == label);
+}
+
+/// 向後相容：舊程式引用的 kCategories
+List<CategoryInfo> get kCategories => CategoryRegistry.instance.all;
+
+CategoryInfo categoryOf(String label) => CategoryRegistry.instance.all.firstWhere(
       (c) => c.label == label,
-      orElse: () => kCategories.last,
+      orElse: () => kBuiltInCategories.last,
     );

@@ -30,6 +30,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   DateTime _date = DateTime.now();
   double? _lat, _lng;
   bool _loadingLocation = false;
+  String _wallet = kDefaultWallet;
 
   @override
   void initState() {
@@ -45,6 +46,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _date = t.date;
       _lat = t.latitude;
       _lng = t.longitude;
+      _wallet = t.wallet;
     }
     final inv = widget.invoicePrefill;
     if (inv != null) {
@@ -137,6 +139,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       latitude: _lat,
       longitude: _lng,
       date: _date,
+      wallet: _wallet,
     );
     if (widget.existing != null) {
       await provider.edit(t);
@@ -296,6 +299,33 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 10),
+          Builder(builder: (context) {
+            final wallets = context.watch<TransactionProvider>().wallets;
+            final value =
+                wallets.any((w) => w.name == _wallet) ? _wallet : null;
+            return DropdownButtonFormField<String>(
+              initialValue: value,
+              decoration: const InputDecoration(
+                labelText: '錢包',
+                prefixIcon: Icon(Icons.account_balance_wallet, size: 18),
+              ),
+              items: wallets
+                  .map((w) => DropdownMenuItem(
+                        value: w.name,
+                        child: Row(
+                          children: [
+                            Icon(w.icon, size: 16),
+                            const SizedBox(width: 8),
+                            Text(w.name),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (v) =>
+                  setState(() => _wallet = v ?? kDefaultWallet),
+            );
+          }),
           const SizedBox(height: 10),
           PlaceSearchField(
             controller: _addressCtrl,

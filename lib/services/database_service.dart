@@ -13,7 +13,7 @@ class DatabaseException implements Exception {
 }
 
 class DatabaseService {
-  static const int _dbVersion = 2;
+  static const int _dbVersion = 3;
   static const String _dbName = 'expense_tracker.db';
   static Database? _db;
 
@@ -54,7 +54,8 @@ class DatabaseService {
         latitude REAL,
         longitude REAL,
         date TEXT NOT NULL,
-        modifiedAt TEXT
+        modifiedAt TEXT,
+        wallet TEXT NOT NULL DEFAULT '現金'
       )
     ''');
     await db.execute('''
@@ -76,7 +77,8 @@ class DatabaseService {
         frequency TEXT NOT NULL,
         startDate TEXT NOT NULL,
         lastGenerated TEXT,
-        active INTEGER NOT NULL DEFAULT 1
+        active INTEGER NOT NULL DEFAULT 1,
+        wallet TEXT NOT NULL DEFAULT '現金'
       )
     ''');
     await db.execute('''
@@ -85,15 +87,23 @@ class DatabaseService {
         amount REAL NOT NULL
       )
     ''');
+    await db.execute('''
+      CREATE TABLE wallets(
+        name TEXT PRIMARY KEY,
+        icon INTEGER NOT NULL,
+        sortOrder INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
     await db.execute(
         'CREATE INDEX idx_tx_date ON transactions(date)');
     await db.execute(
         'CREATE INDEX idx_tx_category ON transactions(category)');
+    await db.execute(
+        'CREATE INDEX idx_tx_wallet ON transactions(wallet)');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // v1 -> v2: add modifiedAt + new tables
       try {
         await db.execute(
             "ALTER TABLE transactions ADD COLUMN modifiedAt TEXT");
@@ -130,6 +140,26 @@ class DatabaseService {
           'CREATE INDEX IF NOT EXISTS idx_tx_date ON transactions(date)');
       await db.execute(
           'CREATE INDEX IF NOT EXISTS idx_tx_category ON transactions(category)');
+    }
+    if (oldVersion < 3) {
+      // v2 -> v3: multi-wallet
+      try {
+        await db.execute(
+            "ALTER TABLE transactions ADD COLUMN wallet TEXT NOT NULL DEFAULT '現金'");
+      } catch (_) {/* may exist */}
+      try {
+        await db.execute(
+            "ALTER TABLE recurring_rules ADD COLUMN wallet TEXT NOT NULL DEFAULT '現金'");
+      } catch (_) {/* may exist */}
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS wallets(
+          name TEXT PRIMARY KEY,
+          icon INTEGER NOT NULL,
+          sortOrder INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_tx_wallet ON transactions(wallet)');
     }
   }
 
@@ -201,6 +231,7 @@ class DatabaseService {
       await db.delete('custom_categories');
       await db.delete('recurring_rules');
       await db.delete('budget_history');
+      await db.delete('wallets');
     } catch (e) {
       throw DatabaseException('清除資料失敗', e);
     }
@@ -210,17 +241,14 @@ class DatabaseService {
   Future<Map<String, dynamic>> exportSnapshot() async {
     try {
       final db = await database;
-      final transactions = await db.query('transactions');
-      final categories = await db.query('custom_categories');
-      final rules = await db.query('recurring_rules');
-      final budgets = await db.query('budget_history');
       return {
         'version': _dbVersion,
         'exportedAt': DateTime.now().toIso8601String(),
-        'transactions': transactions,
-        'custom_categories': categories,
-        'recurring_rules': rules,
-        'budget_history': budgets,
+        'transactions': await db.query('transactions'),
+        'custom_categories': await db.query('custom_categories'),
+        'recurring_rules': await db.query('recurring_rules'),
+        'budget_history': await db.query('budget_history'),
+        'wallets': await db.query('wallets'),
       };
     } catch (e) {
       throw DatabaseException('匯出失敗', e);
@@ -232,25 +260,18 @@ class DatabaseService {
     try {
       final db = await database;
       await db.transaction((txn) async {
-        await txn.delete('transactions');
-        await txn.delete('custom_categories');
-        await txn.delete('recurring_rules');
-        await txn.delete('budget_history');
-        for (final r in (snapshot['transactions'] as List? ?? [])) {
-          await txn.insert('transactions', Map<String, dynamic>.from(r as Map),
-              conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-        for (final r in (snapshot['custom_categories'] as List? ?? [])) {
-          await txn.insert('custom_categories', Map<String, dynamic>.from(r as Map),
-              conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-        for (final r in (snapshot['recurring_rules'] as List? ?? [])) {
-          await txn.insert('recurring_rules', Map<String, dynamic>.from(r as Map),
-              conflictAlgorithm: ConflictAlgorithm.replace);
-        }
-        for (final r in (snapshot['budget_history'] as List? ?? [])) {
-          await txn.insert('budget_history', Map<String, dynamic>.from(r as Map),
-              conflictAlgorithm: ConflictAlgorithm.replace);
+        for (final table in const [
+          'transactions',
+          'custom_categories',
+          'recurring_rules',
+          'budget_history',
+          'wallets',
+        ]) {
+          await txn.delete(table);
+          for (final r in (snapshot[table] as List? ?? [])) {
+            await txn.insert(table, Map<String, dynamic>.from(r as Map),
+                conflictAlgorithm: ConflictAlgorithm.replace);
+          }
         }
       });
     } catch (e) {

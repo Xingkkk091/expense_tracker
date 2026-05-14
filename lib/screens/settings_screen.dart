@@ -237,6 +237,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _editBudget(),
           ),
           ListTile(
+            leading: const Icon(Icons.timeline),
+            title: const Text('預算歷史'),
+            subtitle: const Text('每月達成率趨勢'),
+            onTap: () => Navigator.pushNamed(context, '/budget-history'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_balance_wallet),
+            title: const Text('帳本 / 錢包'),
+            subtitle: const Text('現金、信用卡、電子支付分開記'),
+            onTap: () async {
+              await Navigator.pushNamed(context, '/wallets');
+              await _load();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.category),
+            title: const Text('分類管理'),
+            subtitle: const Text('新增、編輯自訂分類'),
+            onTap: () => Navigator.pushNamed(context, '/categories'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.repeat),
+            title: const Text('重複記帳'),
+            subtitle: const Text('房租、訂閱等定期項目'),
+            onTap: () => Navigator.pushNamed(context, '/recurring'),
+          ),
+          ListTile(
             leading: const Icon(Icons.qr_code_2),
             title: const Text('我的載具'),
             subtitle: Text(_carrierCode ?? '未設定'),

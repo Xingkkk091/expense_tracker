@@ -19,8 +19,9 @@ class TransactionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cat = categoryOf(transaction.category);
-    final amountColor =
-        transaction.isExpense ? Colors.red.shade500 : Colors.green.shade600;
+    final amountColor = transaction.isExpense
+        ? const Color(0xFFB57C70)
+        : const Color(0xFF7C9070);
     final amountPrefix = transaction.isExpense ? '-' : '+';
 
     return Slidable(
@@ -41,18 +42,11 @@ class TransactionCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 
-                    theme.brightness == Brightness.dark ? 0.25 : 0.06),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: theme.colorScheme.outline),
           ),
           child: Row(
             children: [

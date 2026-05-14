@@ -369,16 +369,18 @@ class _SummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _SummaryCard(label: '收入', amount: income, color: Colors.green.shade600),
+        _SummaryCard(
+            label: '收入', amount: income, color: const Color(0xFF7C9070)),
         const SizedBox(width: 8),
-        _SummaryCard(label: '支出', amount: expense, color: Colors.red.shade400),
+        _SummaryCard(
+            label: '支出', amount: expense, color: const Color(0xFFB57C70)),
         const SizedBox(width: 8),
         _SummaryCard(
             label: '結餘',
             amount: balance,
             color: balance >= 0
-                ? Colors.blue.shade600
-                : Colors.orange.shade700),
+                ? const Color(0xFF5C6B7A)
+                : const Color(0xFFC9A86A)),
       ],
     );
   }
@@ -396,18 +398,20 @@ class _SummaryCard extends StatelessWidget {
     final fmt = NumberFormat('#,##0');
     return Expanded(
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
           child: Column(
             children: [
               Text(label,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 1,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 4),
               Text('\$${fmt.format(amount)}',
                   style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                       color: color)),
             ],
           ),

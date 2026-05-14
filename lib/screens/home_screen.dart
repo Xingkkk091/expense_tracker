@@ -120,22 +120,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
         title: _searching && _tab == 0
             ? TextField(
                 controller: _searchCtrl,
                 autofocus: true,
-                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  hintText: '搜尋標題、地址、備註...',
-                  hintStyle: TextStyle(color: Colors.white70),
+                  hintText: '搜尋標題、地址、備註…',
                   border: InputBorder.none,
+                  filled: false,
                 ),
                 onChanged: provider.setSearch,
               )
-            : Text(_titleByTab,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            : Text(_titleByTab),
         actions: [
           if (_tab == 0) ...[
             IconButton(
@@ -216,8 +212,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 FloatingActionButton.small(
                   heroTag: 'scan_invoice',
                   onPressed: _scanInvoice,
-                  backgroundColor: theme.colorScheme.tertiary,
-                  foregroundColor: theme.colorScheme.onTertiary,
+                  backgroundColor: theme.colorScheme.surface,
+                  foregroundColor: theme.colorScheme.onSurface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: theme.colorScheme.outline),
+                  ),
                   tooltip: '掃發票',
                   child: const Icon(Icons.qr_code_scanner),
                 ),
@@ -231,16 +231,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   icon: const Icon(Icons.add),
                   label: const Text('新增'),
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
                 ),
               ],
             )
           : _tab == 1
               ? FloatingActionButton(
                   onPressed: _editBudget,
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
                   child: const Icon(Icons.savings),
                 )
               : null,
@@ -339,8 +335,8 @@ class _TransactionListTab extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: dayTotal >= 0
-                            ? Colors.green.shade600
-                            : Colors.red.shade500),
+                            ? const Color(0xFF7C9070)
+                            : const Color(0xFFB57C70)),
                   ),
                 ],
               ),
@@ -405,26 +401,25 @@ class _BalanceHeader extends StatelessWidget {
     final fmt = NumberFormat('#,##0');
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    const expenseColor = Color(0xFFB57C70);
+    const incomeColor = Color(0xFF7C9070);
 
-    Color progressColor = Colors.greenAccent;
+    Color progressColor = incomeColor;
     if (budgetProgress >= 0.9) {
-      progressColor = Colors.redAccent;
+      progressColor = expenseColor;
     } else if (budgetProgress >= 0.7) {
-      progressColor = Colors.orangeAccent;
+      progressColor = const Color(0xFFC9A86A);
     }
 
     return Container(
       width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [cs.primary, cs.primary.withValues(alpha: 0.85)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius:
-            const BorderRadius.vertical(bottom: Radius.circular(24)),
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.outline),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       child: Column(
         children: [
           // 時間範圍切換
@@ -436,90 +431,67 @@ class _BalanceHeader extends StatelessWidget {
             ],
             selected: {timeRange},
             onSelectionChanged: (s) => onChangeRange(s.first),
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return Colors.white;
-                }
-                return Colors.white.withValues(alpha: 0.15);
-              }),
-              foregroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return cs.primary;
-                }
-                return Colors.white;
-              }),
-              side: WidgetStateProperty.all(
-                  BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-            ),
+            showSelectedIcon: false,
+          ),
+          const SizedBox(height: 18),
+          Text(_rangeLabel,
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 12,
+                  letterSpacing: 1)),
+          const SizedBox(height: 4),
+          Text(
+            'NT\$ ${fmt.format(balance)}',
+            style: TextStyle(
+                color: cs.onSurface,
+                fontSize: 32,
+                fontWeight: FontWeight.w300,
+                letterSpacing: 1),
           ),
           const SizedBox(height: 16),
-          Text(_rangeLabel,
-              style: TextStyle(color: cs.onPrimary.withValues(alpha: 0.85), fontSize: 13)),
-          const SizedBox(height: 2),
-          Text(
-            '\$${fmt.format(balance)}',
-            style: TextStyle(
-                color: cs.onPrimary,
-                fontSize: 34,
-                fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _MiniStat(
-                  label: '收入',
-                  value: '\$${fmt.format(income)}',
-                  icon: Icons.arrow_downward,
-                  color: Colors.greenAccent),
-              Container(width: 1, height: 24, color: Colors.white24),
-              _MiniStat(
-                  label: '支出',
-                  value: '\$${fmt.format(expense)}',
-                  icon: Icons.arrow_upward,
-                  color: Colors.redAccent.shade100),
+              Expanded(
+                child: _MiniStat(
+                    label: '收入',
+                    value: fmt.format(income),
+                    color: incomeColor),
+              ),
+              Container(width: 1, height: 28, color: cs.outline),
+              Expanded(
+                child: _MiniStat(
+                    label: '支出',
+                    value: fmt.format(expense),
+                    color: expenseColor),
+              ),
             ],
           ),
           // 預算進度條
           if (monthlyBudget > 0) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('月預算進度',
-                          style: TextStyle(
-                              color: cs.onPrimary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500)),
-                      Text(
-                        '\$${fmt.format(monthExpense)} / \$${fmt.format(monthlyBudget)}',
-                        style: TextStyle(
-                            color: cs.onPrimary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: budgetProgress,
-                      minHeight: 6,
-                      backgroundColor: Colors.white24,
-                      valueColor: AlwaysStoppedAnimation(progressColor),
-                    ),
-                  ),
-                ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('月預算',
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant, fontSize: 11)),
+                Text(
+                  '${fmt.format(monthExpense)} / ${fmt.format(monthlyBudget)}',
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: budgetProgress,
+                minHeight: 4,
+                backgroundColor: cs.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation(progressColor),
               ),
             ),
           ],
@@ -542,32 +514,25 @@ class _BalanceHeader extends StatelessWidget {
 
 class _MiniStat extends StatelessWidget {
   final String label, value;
-  final IconData icon;
   final Color color;
   const _MiniStat(
-      {required this.label,
-      required this.value,
-      required this.icon,
-      required this.color});
+      {required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Icon(icon, color: color, size: 16),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: const TextStyle(color: Colors.white70, fontSize: 11)),
-            Text(value,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600)),
-          ],
-        ),
+        Text(label,
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 11,
+                letterSpacing: 1)),
+        const SizedBox(height: 2),
+        Text('NT\$ $value',
+            style: TextStyle(
+                color: color,
+                fontSize: 16,
+                fontWeight: FontWeight.w500)),
       ],
     );
   }

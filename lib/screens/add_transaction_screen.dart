@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../services/invoice_parser.dart';
 import '../services/location_service.dart';
-import '../widgets/amount_keypad.dart';
+import '../widgets/calculator_keypad.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/place_search_field.dart';
 
@@ -23,7 +24,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _noteCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
 
-  String _amountText = '0';
+  double _amount = 0;
   bool _isExpense = true;
   String _category = '餐飲';
   DateTime _date = DateTime.now();
@@ -36,7 +37,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final t = widget.existing;
     if (t != null) {
       _titleCtrl.text = t.title;
-      _amountText = t.amount.toStringAsFixed(t.amount.truncateToDouble() == t.amount ? 0 : 2);
+      _amount = t.amount;
       _noteCtrl.text = t.note;
       _addressCtrl.text = t.address;
       _isExpense = t.isExpense;
@@ -47,16 +48,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
     final inv = widget.invoicePrefill;
     if (inv != null) {
-      _amountText = inv.total.toStringAsFixed(
-          inv.total.truncateToDouble() == inv.total ? 0 : 2);
+      _amount = inv.total;
       _date = inv.date;
-      // 標題：第一個品項或發票號碼
       if (inv.items.isNotEmpty) {
         _titleCtrl.text = inv.items.first.name;
       } else {
         _titleCtrl.text = '發票 ${inv.displayNumber}';
       }
-      // 備註：品項清單 + 發票號碼
       final lines = <String>['發票 ${inv.displayNumber}'];
       if (inv.sellerTaxId.isNotEmpty) {
         lines.add('賣方統編 ${inv.sellerTaxId}');
@@ -77,30 +75,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     super.dispose();
   }
 
-  void _onKey(String k) {
-    setState(() {
-      if (k == '.') {
-        if (!_amountText.contains('.')) _amountText += '.';
-        return;
-      }
-      if (_amountText == '0') {
-        _amountText = k;
-      } else {
-        if (_amountText.length < 10) _amountText += k;
-      }
-    });
-  }
-
-  void _onBackspace() {
-    setState(() {
-      if (_amountText.length <= 1) {
-        _amountText = '0';
-      } else {
-        _amountText = _amountText.substring(0, _amountText.length - 1);
-      }
-    });
-  }
-
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -109,6 +83,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       lastDate: DateTime(2100),
     );
     if (picked == null) return;
+    if (!mounted) return;
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_date),
@@ -133,34 +108,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     } on LocationFailure catch (f) {
       if (!mounted) return;
       setState(() => _loadingLocation = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(f.message),
-          behavior: SnackBarBehavior.floating,
-          action: f.reason == LocationFailureReason.permissionDeniedForever
-              ? SnackBarAction(
-                  label: '開啟設定',
-                  onPressed: () {/* requires app_settings package; skip */},
-                )
-              : null,
-        ),
-      );
+      _toast(f.message);
     } catch (e) {
       if (!mounted) return;
       setState(() => _loadingLocation = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('無法取得位置：$e')),
-      );
+      _toast('無法取得位置：$e');
     }
   }
 
   Future<void> _save() async {
-    final amount = double.tryParse(_amountText);
     if (_titleCtrl.text.trim().isEmpty) {
       _toast('請輸入標題');
       return;
     }
-    if (amount == null || amount <= 0) {
+    if (_amount <= 0) {
       _toast('請輸入有效金額');
       return;
     }
@@ -168,7 +129,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final t = Transaction(
       id: widget.existing?.id ?? const Uuid().v4(),
       title: _titleCtrl.text.trim(),
-      amount: amount,
+      amount: _amount,
       isExpense: _isExpense,
       category: _category,
       note: _noteCtrl.text.trim(),
@@ -200,85 +161,99 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final cat = categoryOf(_category);
-    final templates =
-        context.watch<TransactionProvider>().recentTemplates;
+    final templates = context.watch<TransactionProvider>().recentTemplates;
+    final fmt = NumberFormat('#,##0.##');
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: Text(widget.existing != null ? '編輯記錄' : '新增記錄'),
-        backgroundColor: cat.color,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: _save,
+            child: const Text('儲存'),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          // 金額大字顯示 + 收支切換
+          // 收支切換
+          _SegToggle(
+            isExpense: _isExpense,
+            onChanged: (v) => setState(() => _isExpense = v),
+          ),
+          const SizedBox(height: 16),
+
+          // 金額顯示
           Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
             decoration: BoxDecoration(
-              color: cat.color,
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(24)),
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: scheme.outline),
             ),
-            padding: const EdgeInsets.fromLTRB(0, 8, 0, 20),
-            margin: const EdgeInsets.fromLTRB(-16, 0, -16, 16),
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TypeButton(
-                          label: '支出',
-                          icon: Icons.arrow_upward,
-                          selected: _isExpense,
-                          onTap: () => setState(() => _isExpense = true),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _TypeButton(
-                          label: '收入',
-                          icon: Icons.arrow_downward,
-                          selected: !_isExpense,
-                          onTap: () => setState(() => _isExpense = false),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
                 Text(
-                  '\$ $_amountText',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 44,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2),
+                  _isExpense ? '支出金額' : '收入金額',
+                  style: TextStyle(
+                      fontSize: 12, color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: Text('NT\$ ',
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: scheme.onSurfaceVariant)),
+                    ),
+                    Text(
+                      fmt.format(_amount),
+                      style: TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: 1,
+                        color: _isExpense
+                            ? AppExpenseColor.of(context)
+                            : AppIncomeColor.of(context),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 12),
 
-          // 最近使用範本
+          // 計算機鍵盤
+          CalculatorKeypad(
+            initialValue: _amount,
+            onChanged: (v) => setState(() => _amount = v),
+          ),
+          const SizedBox(height: 20),
+
+          _label('分類'),
+          const SizedBox(height: 8),
+          CategoryGrid(
+            selected: _category,
+            onChanged: (v) => setState(() => _category = v),
+          ),
+          const SizedBox(height: 20),
+
+          // 最近使用
           if (templates.isNotEmpty && widget.existing == null) ...[
-            Row(
-              children: [
-                const Icon(Icons.history, size: 16),
-                const SizedBox(width: 4),
-                Text('最近使用',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: theme.hintColor,
-                        fontWeight: FontWeight.w500)),
-              ],
-            ),
+            _label('最近使用'),
             const SizedBox(height: 8),
             SizedBox(
-              height: 36,
+              height: 34,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: templates.length,
@@ -287,60 +262,41 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   final t = templates[i];
                   final c = categoryOf(t.category);
                   return ActionChip(
-                    avatar: Icon(c.icon, size: 16, color: c.color),
-                    label: Text(t.title),
+                    avatar: Icon(c.icon, size: 15, color: c.color),
+                    label: Text(t.title,
+                        style: const TextStyle(fontSize: 12)),
                     onPressed: () => _applyTemplate(t),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
           ],
 
-          // 分類 Grid
-          Text('分類',
-              style: TextStyle(
-                  fontSize: 13,
-                  color: theme.hintColor,
-                  fontWeight: FontWeight.w500)),
+          _label('明細'),
           const SizedBox(height: 8),
-          CategoryGrid(
-            selected: _category,
-            onChanged: (v) => setState(() => _category = v),
-          ),
-          const SizedBox(height: 16),
-
-          // 標題
           TextField(
             controller: _titleCtrl,
             decoration: const InputDecoration(
               labelText: '標題',
-              prefixIcon: Icon(Icons.title),
-              border: OutlineInputBorder(),
-              isDense: true,
+              prefixIcon: Icon(Icons.title, size: 18),
             ),
           ),
-          const SizedBox(height: 12),
-
-          // 日期
+          const SizedBox(height: 10),
           InkWell(
             onTap: _pickDate,
+            borderRadius: BorderRadius.circular(6),
             child: InputDecorator(
               decoration: const InputDecoration(
                 labelText: '日期時間',
-                prefixIcon: Icon(Icons.calendar_today),
-                border: OutlineInputBorder(),
-                isDense: true,
+                prefixIcon: Icon(Icons.event, size: 18),
               ),
               child: Text(
-                '${_date.year}/${_date.month.toString().padLeft(2, '0')}/${_date.day.toString().padLeft(2, '0')}  '
-                '${_date.hour.toString().padLeft(2, '0')}:${_date.minute.toString().padLeft(2, '0')}',
+                DateFormat('yyyy/MM/dd  HH:mm').format(_date),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-
-          // 地址 + 店家搜尋
+          const SizedBox(height: 10),
           PlaceSearchField(
             controller: _addressCtrl,
             loadingCurrentLocation: _loadingLocation,
@@ -350,114 +306,118 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 _addressCtrl.text = r.address;
                 _lat = r.latitude;
                 _lng = r.longitude;
-                // 若使用者標題還是空的，順便帶入店家名稱
                 if (_titleCtrl.text.trim().isEmpty && r.name.isNotEmpty) {
                   _titleCtrl.text = r.name;
                 }
               });
             },
           ),
-          const SizedBox(height: 12),
-
-          // 備註
+          const SizedBox(height: 10),
           TextField(
             controller: _noteCtrl,
             decoration: const InputDecoration(
               labelText: '備註',
-              prefixIcon: Icon(Icons.note),
-              border: OutlineInputBorder(),
-              isDense: true,
+              prefixIcon: Icon(Icons.notes, size: 18),
             ),
             maxLines: 2,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
-          // 金額 numpad
-          Text('金額',
-              style: TextStyle(
-                  fontSize: 13,
-                  color: theme.hintColor,
-                  fontWeight: FontWeight.w500)),
-          const SizedBox(height: 8),
-          AmountKeypad(
-            onKeyTap: _onKey,
-            onBackspace: _onBackspace,
-            onQuickAdd: (v) {
-              final current = double.tryParse(_amountText) ?? 0;
-              setState(() {
-                final n = current + v;
-                _amountText = n == n.truncateToDouble()
-                    ? n.toStringAsFixed(0)
-                    : n.toStringAsFixed(2);
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // 儲存按鈕
-          FilledButton.icon(
+          FilledButton(
             onPressed: _save,
-            icon: const Icon(Icons.save),
-            label: Text(widget.existing != null ? '儲存修改' : '新增記錄',
-                style: const TextStyle(fontSize: 16)),
             style: FilledButton.styleFrom(
-              backgroundColor: cat.color,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              minimumSize: const Size.fromHeight(50),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(cat.icon, size: 18, color: scheme.onPrimary),
+                const SizedBox(width: 8),
+                Text(widget.existing != null ? '儲存修改' : '新增記錄',
+                    style: const TextStyle(fontSize: 15)),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _label(String t) {
+    return Text(
+      t,
+      style: TextStyle(
+        fontSize: 12,
+        letterSpacing: 1.5,
+        fontWeight: FontWeight.w600,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
 }
 
-class _TypeButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TypeButton({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
+/// 收支切換（日系扁平 segmented）
+class _SegToggle extends StatelessWidget {
+  final bool isExpense;
+  final ValueChanged<bool> onChanged;
+  const _SegToggle({required this.isExpense, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border:
-              Border.all(color: Colors.white.withValues(alpha: selected ? 1 : 0.5)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon,
-                color: selected
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.white,
-                size: 16),
-            const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    color: selected
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.white,
-                    fontWeight: FontWeight.w600)),
-          ],
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: scheme.outline),
+      ),
+      padding: const EdgeInsets.all(3),
+      child: Row(
+        children: [
+          _seg(context, '支出', true),
+          _seg(context, '收入', false),
+        ],
+      ),
+    );
+  }
+
+  Widget _seg(BuildContext context, String label, bool expense) {
+    final scheme = Theme.of(context).colorScheme;
+    final selected = isExpense == expense;
+    final activeColor =
+        expense ? AppExpenseColor.of(context) : AppIncomeColor.of(context);
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onChanged(expense),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? activeColor.withValues(alpha: 0.14)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              color: selected ? activeColor : scheme.onSurfaceVariant,
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+/// 統一支出/收入色（沿用 theme palette）
+class AppExpenseColor {
+  static Color of(BuildContext context) => const Color(0xFFB57C70);
+}
+
+class AppIncomeColor {
+  static Color of(BuildContext context) => const Color(0xFF7C9070);
 }

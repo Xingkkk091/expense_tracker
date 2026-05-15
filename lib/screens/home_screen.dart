@@ -174,6 +174,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           IconButton(
+            icon: const Icon(Icons.casino_outlined),
+            tooltip: '今晚吃什麼',
+            onPressed: () =>
+                Navigator.pushNamed(context, '/food-picker'),
+          ),
+          IconButton(
             icon: const Icon(Icons.qr_code_2),
             tooltip: l.myCarrier,
             onPressed: () => Navigator.push(

@@ -9,6 +9,7 @@ import 'screens/budget_history_screen.dart';
 import 'screens/carrier_screen.dart';
 import 'screens/category_manage_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/food_picker_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/recurring_manage_screen.dart';
 import 'screens/reports_screen.dart';
@@ -63,6 +64,7 @@ class ExpenseTrackerApp extends StatelessWidget {
         '/recurring': (_) => const RecurringManageScreen(),
         '/budget-history': (_) => const BudgetHistoryScreen(),
         '/reports': (_) => const ReportsScreen(),
+        '/food-picker': (_) => const FoodPickerScreen(),
       },
       home: const _BootGate(),
     );

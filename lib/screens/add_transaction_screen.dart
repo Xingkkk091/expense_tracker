@@ -16,7 +16,15 @@ import '../theme/app_colors.dart';
 class AddTransactionScreen extends StatefulWidget {
   final Transaction? existing;
   final InvoiceData? invoicePrefill;
-  const AddTransactionScreen({super.key, this.existing, this.invoicePrefill});
+  final String? prefillTitle;
+  final String? prefillCategory;
+  const AddTransactionScreen({
+    super.key,
+    this.existing,
+    this.invoicePrefill,
+    this.prefillTitle,
+    this.prefillCategory,
+  });
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -69,6 +77,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
       _noteCtrl.text = lines.join('\n');
       _isExpense = true;
+    }
+    if (widget.prefillTitle != null) {
+      _titleCtrl.text = widget.prefillTitle!;
+    }
+    if (widget.prefillCategory != null) {
+      _category = widget.prefillCategory!;
     }
   }
 

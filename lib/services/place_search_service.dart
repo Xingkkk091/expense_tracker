@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 
 class PlaceResult {
@@ -64,6 +65,76 @@ class PlaceSearchService {
       }
     }
     return [];
+  }
+
+  /// 在指定座標的附近搜尋（用 Nominatim 的 viewbox + bounded=1）
+  Future<List<PlaceResult>> searchNearby(
+    String query, {
+    required double centerLat,
+    required double centerLng,
+    double radiusKm = 3,
+    String language = 'zh-TW',
+    int limit = 15,
+  }) async {
+    final q = query.trim();
+    if (q.isEmpty) return [];
+
+    // 算 bounding box (左,上,右,下)
+    final dLat = radiusKm / 111.0;
+    final cosLat = cos(centerLat * pi / 180);
+    final dLng = radiusKm / (111.0 * (cosLat.abs() < 0.0001 ? 0.0001 : cosLat));
+    final left = centerLng - dLng;
+    final right = centerLng + dLng;
+    final top = centerLat + dLat;
+    final bottom = centerLat - dLat;
+
+    final cacheKey = '$language|$q|$centerLat,$centerLng|$radiusKm';
+    final cached = _cache[cacheKey];
+    if (cached != null) return cached;
+
+    final uri = Uri.parse(_endpoint).replace(queryParameters: {
+      'q': q,
+      'format': 'json',
+      'addressdetails': '1',
+      'namedetails': '1',
+      'limit': '$limit',
+      'accept-language': language,
+      'viewbox': '$left,$top,$right,$bottom',
+      'bounded': '1',
+    });
+
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final resp = await http.get(uri, headers: {
+          'User-Agent': _ua,
+        }).timeout(const Duration(seconds: 10));
+        if (resp.statusCode != 200) continue;
+        final body = utf8.decode(resp.bodyBytes);
+        final list = json.decode(body) as List<dynamic>;
+        final results =
+            list.map((e) => _fromJson(e as Map<String, dynamic>)).toList();
+        _putCache(cacheKey, results);
+        return results;
+      } catch (_) {
+        if (attempt == 1) return [];
+      }
+    }
+    return [];
+  }
+
+  /// 兩點距離（公里），用 Haversine 公式
+  static double distanceKm(
+      double lat1, double lng1, double lat2, double lng2) {
+    const earth = 6371.0;
+    final dLat = (lat2 - lat1) * pi / 180;
+    final dLng = (lng2 - lng1) * pi / 180;
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1 * pi / 180) *
+            cos(lat2 * pi / 180) *
+            sin(dLng / 2) *
+            sin(dLng / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earth * c;
   }
 
   void _putCache(String key, List<PlaceResult> value) {

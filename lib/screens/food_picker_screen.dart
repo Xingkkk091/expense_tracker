@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/food_picker_service.dart';
 import 'add_transaction_screen.dart';
+import 'food_nearby_map_screen.dart';
 
 class FoodPickerScreen extends StatefulWidget {
   const FoodPickerScreen({super.key});
@@ -108,6 +109,16 @@ class _FoodPickerScreenState extends State<FoodPickerScreen> {
           prefillTitle: _result,
           prefillCategory: '餐飲',
         ),
+      ),
+    );
+  }
+
+  void _findNearby() {
+    if (_result == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FoodNearbyMapScreen(food: _result!),
       ),
     );
   }
@@ -245,18 +256,28 @@ class _FoodPickerScreenState extends State<FoodPickerScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  if (_result != null)
+                  if (_result != null) ...[
                     SizedBox(
                       width: 200,
                       child: OutlinedButton.icon(
-                        onPressed: _recordIt,
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('吃這個・記一筆'),
+                        onPressed: _findNearby,
+                        icon: const Icon(Icons.map_outlined, size: 18),
+                        label: const Text('找附近哪裡有'),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(46),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 200,
+                      child: TextButton.icon(
+                        onPressed: _recordIt,
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('直接記一筆'),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Text('${_theme.label}：共 ${_foods.length} 個選項',
                       style: TextStyle(

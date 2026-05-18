@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 以下：定義要備份哪些檔案到 Google Drive -->
+<full-backup-content>
+    <!-- SQLite 資料庫（記帳資料） -->
+    <include domain="database" path="expense_tracker.db" />
+    <!-- SharedPreferences（預算、載具、語言、PIN 等） -->
+    <include domain="sharedpref" path="." />
+    <!-- App 文件目錄裡的收據照片與備份 -->
+    <include domain="file" path="receipts/" />
+    <include domain="file" path="auto_backups/" />
+</full-backup-content>

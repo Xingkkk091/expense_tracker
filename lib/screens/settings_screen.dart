@@ -297,6 +297,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           _section(l.sectionData),
           ListTile(
+            leading: const Icon(Icons.history),
+            title: const Text('自動備份'),
+            subtitle: const Text('每次變動自動存檔，保留最近 5 份'),
+            onTap: () => Navigator.pushNamed(context, '/auto-backup'),
+          ),
+          ListTile(
             leading: const Icon(Icons.file_upload),
             title: Text(l.exportJson),
             subtitle: Text(l.exportJsonSub),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/transaction.dart';
+import '../services/auto_backup_service.dart';
 import '../services/database_service.dart';
 import '../services/budget_service.dart';
 import '../services/category_service.dart';
@@ -243,6 +244,12 @@ class TransactionProvider extends ChangeNotifier {
     await _db.insert(t);
     await load();
     _checkBudgetAlert();
+    _triggerAutoBackup();
+  }
+
+  void _triggerAutoBackup() {
+    // 觸發背景備份，每 5 分鐘最多一次（避免每筆都寫）
+    AutoBackupService().runBackup(minIntervalMinutes: 5);
   }
 
   void _checkBudgetAlert() {
@@ -255,11 +262,13 @@ class TransactionProvider extends ChangeNotifier {
   Future<void> remove(String id) async {
     await _db.delete(id);
     await load();
+    _triggerAutoBackup();
   }
 
   Future<void> edit(Transaction t) async {
     await _db.update(t);
     await load();
+    _triggerAutoBackup();
   }
 
   void setTimeRange(TimeRange r) {

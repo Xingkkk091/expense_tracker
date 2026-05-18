@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 
-/// 推資料給 Android 桌面 Widget
+/// 推資料給 Android 桌面 Widget。
+/// 全部操作都靜默失敗——widget 不該影響 App 本體運作。
 class WidgetService {
   static const _kAndroidName = 'ExpenseWidgetProvider';
 
@@ -30,7 +31,6 @@ class WidgetService {
     }
   }
 
-  /// 取得啟動時的 URI（widget 點擊冷啟動）
   Future<Uri?> initialUri() async {
     try {
       return await HomeWidget.initiallyLaunchedFromHomeWidget();
@@ -39,6 +39,13 @@ class WidgetService {
     }
   }
 
-  /// 監聽 widget 點擊（app 在背景時點 widget）
-  Stream<Uri?> get clicks => HomeWidget.widgetClicked;
+  /// 監聽 widget 點擊。若 plugin 未註冊就回傳空 Stream。
+  Stream<Uri?> get clicks {
+    try {
+      return HomeWidget.widgetClicked;
+    } catch (e) {
+      debugPrint('widgetClicked stream unavailable: $e');
+      return const Stream<Uri?>.empty();
+    }
+  }
 }

@@ -30,10 +30,17 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await ErrorReporter().init();
-  await NotificationService().init();
+  // 啟動時的初始化全部包 try-catch；任何單一服務失敗都不該擋住 App 啟動
+  try {
+    await ErrorReporter().init();
+  } catch (_) {/* ignore */}
+  try {
+    await NotificationService().init();
+  } catch (_) {/* ignore */}
   final localeController = LocaleController();
-  await localeController.load();
+  try {
+    await localeController.load();
+  } catch (_) {/* ignore */}
   runApp(
     MultiProvider(
       providers: [
@@ -108,9 +115,19 @@ class _BootGateState extends State<_BootGate> {
   }
 
   void _listenWidgetClicks() {
-    WidgetService().clicks.listen((uri) {
-      if (uri != null) _handleWidgetUri(uri);
-    });
+    try {
+      WidgetService().clicks.listen(
+        (uri) {
+          if (uri != null) _handleWidgetUri(uri);
+        },
+        onError: (e) {
+          ErrorReporter().log('widgetClicks', e);
+        },
+      );
+    } catch (e, st) {
+      // 若插件未註冊就完全略過，不能讓 widget 整個拖垮 App
+      ErrorReporter().log('listenWidgetClicks', e, st);
+    }
   }
 
   Future<void> _handleWidgetUri(Uri uri) async {
@@ -143,8 +160,12 @@ class _BootGateState extends State<_BootGate> {
   }
 
   Future<void> _bootstrap() async {
-    // 取冷啟動 URI（widget 點擊喚醒）
-    _pendingWidgetUri = await WidgetService().initialUri();
+    // 取冷啟動 URI（widget 點擊喚醒）；失敗也 OK
+    try {
+      _pendingWidgetUri = await WidgetService().initialUri();
+    } catch (_) {
+      _pendingWidgetUri = null;
+    }
 
     // 啟動關鍵路徑只查 onboarding/lock，盡快顯示畫面
     final seen = await OnboardingScreen.hasSeen();

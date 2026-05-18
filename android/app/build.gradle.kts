@@ -31,11 +31,10 @@ android {
 
     buildTypes {
         release {
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-            // R8 程式碼壓縮 + 資源壓縮 (#47)
+            // R8 程式碼壓縮（資源壓縮過於激進，遇 plugin 反射易出問題，先關掉）
             isMinifyEnabled = true
-            isShrinkResources = true
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

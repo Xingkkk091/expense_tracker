@@ -16,7 +16,10 @@
     <application
         android:label="expense_tracker"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="true"
+        android:requestLegacyExternalStorage="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -22,6 +22,10 @@ import 'services/auth_service.dart';
 import 'services/error_reporter.dart';
 import 'services/notification_service.dart';
 import 'services/recurring_service.dart';
+import 'services/widget_service.dart';
+import 'screens/add_transaction_screen.dart';
+import 'screens/invoice_scanner_screen.dart';
+import 'services/invoice_parser.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -41,6 +45,8 @@ Future<void> main() async {
   );
 }
 
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
 class ExpenseTrackerApp extends StatelessWidget {
   const ExpenseTrackerApp({super.key});
 
@@ -48,6 +54,7 @@ class ExpenseTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = context.watch<LocaleController>().locale;
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       onGenerateTitle: (ctx) => AppLocalizations.of(ctx).appTitle,
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.system,
@@ -91,14 +98,54 @@ enum _BootStage { loading, onboarding, locked, ready }
 
 class _BootGateState extends State<_BootGate> {
   _BootStage _stage = _BootStage.loading;
+  Uri? _pendingWidgetUri;
 
   @override
   void initState() {
     super.initState();
     _bootstrap();
+    _listenWidgetClicks();
+  }
+
+  void _listenWidgetClicks() {
+    WidgetService().clicks.listen((uri) {
+      if (uri != null) _handleWidgetUri(uri);
+    });
+  }
+
+  Future<void> _handleWidgetUri(Uri uri) async {
+    // 等到 ready 狀態才導航
+    while (_stage != _BootStage.ready) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    final nav = appNavigatorKey.currentState;
+    if (nav == null) return;
+    switch (uri.host) {
+      case 'add':
+        nav.push(MaterialPageRoute(
+            builder: (_) => const AddTransactionScreen()));
+        break;
+      case 'scan':
+        final invoice = await nav.push<InvoiceData>(
+          MaterialPageRoute(builder: (_) => const InvoiceScannerScreen()),
+        );
+        if (invoice != null) {
+          nav.push(MaterialPageRoute(
+            builder: (_) => AddTransactionScreen(invoicePrefill: invoice),
+          ));
+        }
+        break;
+      case 'home':
+      default:
+        // 已在 home
+        break;
+    }
   }
 
   Future<void> _bootstrap() async {
+    // 取冷啟動 URI（widget 點擊喚醒）
+    _pendingWidgetUri = await WidgetService().initialUri();
+
     // 啟動關鍵路徑只查 onboarding/lock，盡快顯示畫面
     final seen = await OnboardingScreen.hasSeen();
     if (!mounted) return;
@@ -108,6 +155,11 @@ class _BootGateState extends State<_BootGate> {
       final lock = await AuthService().isLockEnabled();
       if (!mounted) return;
       setState(() => _stage = lock ? _BootStage.locked : _BootStage.ready);
+      // 進入 ready 後處理 pending URI
+      if (_stage == _BootStage.ready && _pendingWidgetUri != null) {
+        _handleWidgetUri(_pendingWidgetUri!);
+        _pendingWidgetUri = null;
+      }
     }
     // 重複記帳補產生：移到背景執行，不阻塞啟動
     Future.microtask(() async {
@@ -135,7 +187,13 @@ class _BootGateState extends State<_BootGate> {
         );
       case _BootStage.locked:
         return AppLockScreen(
-            onUnlocked: () => setState(() => _stage = _BootStage.ready));
+            onUnlocked: () {
+              setState(() => _stage = _BootStage.ready);
+              if (_pendingWidgetUri != null) {
+                _handleWidgetUri(_pendingWidgetUri!);
+                _pendingWidgetUri = null;
+              }
+            });
       case _BootStage.ready:
         return const HomeScreen();
     }

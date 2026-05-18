@@ -46,3 +46,9 @@
 # Flutter 引用 Play Core (deferred components) 但我們沒用，忽略缺少的類別
 -dontwarn com.google.android.play.core.**
 -keep class com.google.android.play.core.** { *; }
+
+# home_widget
+-keep class es.antonborri.home_widget.** { *; }
+# 自家 widget provider (反射建立)
+-keep class com.example.expense_tracker.ExpenseWidgetProvider { *; }
+-keep class com.example.expense_tracker.MainActivity { *; }

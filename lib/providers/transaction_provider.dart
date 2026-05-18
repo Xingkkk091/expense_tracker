@@ -5,7 +5,6 @@ import '../services/budget_service.dart';
 import '../services/category_service.dart';
 import '../services/notification_service.dart';
 import '../services/wallet_service.dart';
-import '../services/widget_service.dart';
 
 enum TimeRange { week, month, all }
 
@@ -224,26 +223,6 @@ class TransactionProvider extends ChangeNotifier {
     _wallets = await _walletService.getAll();
     _invalidate();
     notifyListeners();
-    _pushWidget();
-  }
-
-  void _pushWidget() {
-    // 用全期間（_all）算本月收支，跟 widget 標的「本月」一致
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, 1);
-    double income = 0, expense = 0;
-    for (final t in _all.where((t) => !t.date.isBefore(start))) {
-      if (t.isExpense) {
-        expense += t.amount;
-      } else {
-        income += t.amount;
-      }
-    }
-    WidgetService().push(
-      monthBalance: income - expense,
-      monthIncome: income,
-      monthExpense: expense,
-    );
   }
 
   /// 重新載入分類與錢包設定（自訂分類/錢包變更後呼叫）

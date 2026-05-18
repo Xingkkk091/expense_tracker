@@ -32,13 +32,9 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-            // R8 程式碼壓縮（資源壓縮過於激進，遇 plugin 反射易出問題，先關掉）
-            isMinifyEnabled = true
+            // 暫時關掉 R8 排除「混淆造成 crash」這個變數；APK 會大一些但更穩
+            isMinifyEnabled = false
             isShrinkResources = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
         }
     }
 }

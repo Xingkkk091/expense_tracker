@@ -291,21 +291,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('自動比對掃描過的電子發票'),
             onTap: () => Navigator.pushNamed(context, '/invoice-lottery'),
           ),
-          ListTile(
-            leading: const Icon(Icons.refresh),
-            title: const Text('立即更新桌面 Widget'),
-            subtitle: const Text('若桌面數字沒同步可手動觸發'),
-            onTap: () async {
-              await context.read<TransactionProvider>().load();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已推送最新資料到桌面 Widget'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-          ),
 
           _section('通知'),
           const _NotificationTile(),

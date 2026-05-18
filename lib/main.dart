@@ -103,15 +103,34 @@ class _BootGate extends StatefulWidget {
 
 enum _BootStage { loading, onboarding, locked, ready }
 
-class _BootGateState extends State<_BootGate> {
+class _BootGateState extends State<_BootGate> with WidgetsBindingObserver {
   _BootStage _stage = _BootStage.loading;
   Uri? _pendingWidgetUri;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _bootstrap();
     _listenWidgetClicks();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // App 回前景時強制推一次 widget，確保桌面數字最新
+    if (state == AppLifecycleState.resumed && mounted) {
+      // ignore: use_build_context_synchronously
+      final ctx = appNavigatorKey.currentContext ?? context;
+      try {
+        ctx.read<TransactionProvider>().load();
+      } catch (_) {/* ignore */}
+    }
   }
 
   void _listenWidgetClicks() {

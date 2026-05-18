@@ -14,15 +14,20 @@ import 'screens/onboarding_screen.dart';
 import 'screens/recurring_manage_screen.dart';
 import 'screens/reports_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/invoice_lottery_screen.dart';
+import 'screens/subscription_screen.dart';
 import 'screens/wallet_manage_screen.dart';
+import 'screens/wallet_transfer_screen.dart';
 import 'services/auth_service.dart';
 import 'services/error_reporter.dart';
+import 'services/notification_service.dart';
 import 'services/recurring_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ErrorReporter().init();
+  await NotificationService().init();
   final localeController = LocaleController();
   await localeController.load();
   runApp(
@@ -65,6 +70,9 @@ class ExpenseTrackerApp extends StatelessWidget {
         '/budget-history': (_) => const BudgetHistoryScreen(),
         '/reports': (_) => const ReportsScreen(),
         '/food-picker': (_) => const FoodPickerScreen(),
+        '/wallet-transfer': (_) => const WalletTransferScreen(),
+        '/subscriptions': (_) => const SubscriptionScreen(),
+        '/invoice-lottery': (_) => const InvoiceLotteryScreen(),
       },
       home: const _BootGate(),
     );

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../services/invoice_parser.dart';
 import '../services/location_service.dart';
+import '../services/receipt_service.dart';
 import '../widgets/animated_widgets.dart';
 import '../widgets/calculator_keypad.dart';
 import '../widgets/category_grid.dart';
@@ -42,6 +44,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   double? _lat, _lng;
   bool _loadingLocation = false;
   String _wallet = kDefaultWallet;
+  String? _receiptPath;
+  final _receiptSvc = ReceiptService();
 
   @override
   void initState() {
@@ -58,6 +62,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _lat = t.latitude;
       _lng = t.longitude;
       _wallet = t.wallet;
+      _receiptPath = t.receiptPath;
     }
     final inv = widget.invoicePrefill;
     if (inv != null) {
@@ -157,6 +162,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       longitude: _lng,
       date: _date,
       wallet: _wallet,
+      receiptPath: _receiptPath,
+      transferGroupId: widget.existing?.transferGroupId,
     );
     if (widget.existing != null) {
       await provider.edit(t);
@@ -368,6 +375,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             maxLines: 2,
           ),
+          const SizedBox(height: 12),
+          _ReceiptPicker(
+            path: _receiptPath,
+            onTake: () async {
+              final p = await _receiptSvc.takePhoto();
+              if (p != null) setState(() => _receiptPath = p);
+            },
+            onPick: () async {
+              final p = await _receiptSvc.pickFromGallery();
+              if (p != null) setState(() => _receiptPath = p);
+            },
+            onRemove: () => setState(() => _receiptPath = null),
+          ),
           const SizedBox(height: 24),
 
           FilledButton(
@@ -453,6 +473,110 @@ class _SegToggle extends StatelessWidget {
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
               color: selected ? activeColor : scheme.onSurfaceVariant,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReceiptPicker extends StatelessWidget {
+  final String? path;
+  final VoidCallback onTake;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  const _ReceiptPicker({
+    required this.path,
+    required this.onTake,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scheme.outline),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.receipt_long_outlined,
+                  size: 18, color: scheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text('收據照片',
+                  style: TextStyle(
+                      fontSize: 13, color: scheme.onSurfaceVariant)),
+              const Spacer(),
+              if (path == null) ...[
+                TextButton.icon(
+                  onPressed: onTake,
+                  icon: const Icon(Icons.photo_camera, size: 16),
+                  label: const Text('拍照'),
+                  style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact),
+                ),
+                TextButton.icon(
+                  onPressed: onPick,
+                  icon: const Icon(Icons.photo_library, size: 16),
+                  label: const Text('相簿'),
+                  style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact),
+                ),
+              ] else
+                TextButton.icon(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.close, size: 16),
+                  label: const Text('移除'),
+                  style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: AppColors.expense),
+                ),
+            ],
+          ),
+          if (path != null) ...[
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => _showFull(context),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.file(
+                  File(path!),
+                  width: double.infinity,
+                  height: 180,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 80,
+                    color: scheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    child: const Text('無法顯示收據圖片'),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showFull(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(8),
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: InteractiveViewer(
+            child: Image.file(File(path!)),
           ),
         ),
       ),

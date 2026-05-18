@@ -3,6 +3,7 @@ import '../models/transaction.dart';
 import '../services/database_service.dart';
 import '../services/budget_service.dart';
 import '../services/category_service.dart';
+import '../services/notification_service.dart';
 import '../services/wallet_service.dart';
 
 enum TimeRange { week, month, all }
@@ -241,6 +242,14 @@ class TransactionProvider extends ChangeNotifier {
   Future<void> add(Transaction t) async {
     await _db.insert(t);
     await load();
+    _checkBudgetAlert();
+  }
+
+  void _checkBudgetAlert() {
+    if (_monthlyBudget > 0 && budgetProgress >= 0.7) {
+      NotificationService()
+          .notifyBudgetIfNeeded(budgetProgress, monthExpense, _monthlyBudget);
+    }
   }
 
   Future<void> remove(String id) async {

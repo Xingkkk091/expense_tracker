@@ -12,6 +12,8 @@ class Transaction {
   final double? longitude;
   final DateTime date;
   final String wallet; // 帳本/錢包名稱
+  final String? receiptPath; // 收據照片本地路徑
+  final String? transferGroupId; // 轉帳配對 ID（轉出+轉入共用同一 id）
 
   Transaction({
     required this.id,
@@ -25,7 +27,11 @@ class Transaction {
     this.longitude,
     required this.date,
     this.wallet = kDefaultWallet,
+    this.receiptPath,
+    this.transferGroupId,
   });
+
+  bool get isTransfer => transferGroupId != null;
 
   Transaction copyWith({
     String? title,
@@ -38,6 +44,8 @@ class Transaction {
     double? longitude,
     DateTime? date,
     String? wallet,
+    String? receiptPath,
+    String? transferGroupId,
   }) {
     return Transaction(
       id: id,
@@ -51,6 +59,8 @@ class Transaction {
       longitude: longitude ?? this.longitude,
       date: date ?? this.date,
       wallet: wallet ?? this.wallet,
+      receiptPath: receiptPath ?? this.receiptPath,
+      transferGroupId: transferGroupId ?? this.transferGroupId,
     );
   }
 
@@ -66,6 +76,8 @@ class Transaction {
         'longitude': longitude,
         'date': date.toIso8601String(),
         'wallet': wallet,
+        'receiptPath': receiptPath,
+        'transferGroupId': transferGroupId,
       };
 
   factory Transaction.fromMap(Map<String, dynamic> map) => Transaction(
@@ -80,6 +92,8 @@ class Transaction {
         longitude: map['longitude'],
         date: DateTime.parse(map['date']),
         wallet: (map['wallet'] as String?) ?? kDefaultWallet,
+        receiptPath: map['receiptPath'] as String?,
+        transferGroupId: map['transferGroupId'] as String?,
       );
 }
 

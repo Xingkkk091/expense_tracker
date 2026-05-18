@@ -97,7 +97,17 @@ class _WalletManageScreenState extends State<WalletManageScreen> {
         context.watch<TransactionProvider>().walletBalances;
     final fmt = NumberFormat('#,##0');
     return Scaffold(
-      appBar: AppBar(title: const Text('帳本 / 錢包')),
+      appBar: AppBar(
+        title: const Text('帳本 / 錢包'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz),
+            tooltip: '錢包轉帳',
+            onPressed: () =>
+                Navigator.pushNamed(context, '/wallet-transfer'),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _editDialog(),
         icon: const Icon(Icons.add),

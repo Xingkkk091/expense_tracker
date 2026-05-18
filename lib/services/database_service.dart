@@ -13,7 +13,7 @@ class DatabaseException implements Exception {
 }
 
 class DatabaseService {
-  static const int _dbVersion = 3;
+  static const int _dbVersion = 4;
   static const String _dbName = 'expense_tracker.db';
   static Database? _db;
 
@@ -55,7 +55,9 @@ class DatabaseService {
         longitude REAL,
         date TEXT NOT NULL,
         modifiedAt TEXT,
-        wallet TEXT NOT NULL DEFAULT '現金'
+        wallet TEXT NOT NULL DEFAULT '現金',
+        receiptPath TEXT,
+        transferGroupId TEXT
       )
     ''');
     await db.execute('''
@@ -161,6 +163,15 @@ class DatabaseService {
       await db.execute(
           'CREATE INDEX IF NOT EXISTS idx_tx_wallet ON transactions(wallet)');
     }
+    if (oldVersion < 4) {
+      // v3 -> v4: receipts + transfer
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN receiptPath TEXT');
+      } catch (_) {/* may exist */}
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN transferGroupId TEXT');
+      } catch (_) {/* may exist */}
+    }
   }
 
   // ============== transactions ==============
@@ -190,7 +201,20 @@ class DatabaseService {
   Future<void> delete(String id) async {
     try {
       final db = await database;
-      await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+      // 若是轉帳，刪除整組（轉出 + 轉入）
+      final rows = await db.query('transactions',
+          columns: ['transferGroupId'],
+          where: 'id = ?',
+          whereArgs: [id],
+          limit: 1);
+      final groupId =
+          rows.isNotEmpty ? rows.first['transferGroupId'] as String? : null;
+      if (groupId != null) {
+        await db.delete('transactions',
+            where: 'transferGroupId = ?', whereArgs: [groupId]);
+      } else {
+        await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+      }
     } catch (e) {
       throw DatabaseException('刪除交易失敗', e);
     }

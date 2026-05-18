@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/backup_service.dart';
 import '../services/carrier_service.dart';
 import '../services/locale_controller.dart';
+import '../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -270,6 +271,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => Navigator.pushNamed(context, '/recurring'),
           ),
           ListTile(
+            leading: const Icon(Icons.subscriptions),
+            title: const Text('訂閱 / 定期費用'),
+            subtitle: const Text('Netflix、房租、訂閱費月支出一覽'),
+            onTap: () => Navigator.pushNamed(context, '/subscriptions'),
+          ),
+          ListTile(
             leading: const Icon(Icons.qr_code_2),
             title: Text(l.myCarrier),
             subtitle: Text(_carrierCode ?? l.notSet),
@@ -278,6 +285,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await _load();
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.emoji_events_outlined),
+            title: const Text('統一發票對獎'),
+            subtitle: const Text('自動比對掃描過的電子發票'),
+            onTap: () => Navigator.pushNamed(context, '/invoice-lottery'),
+          ),
+
+          _section('通知'),
+          const _NotificationTile(),
 
           _section(l.sectionData),
           ListTile(
@@ -442,6 +458,104 @@ class _LanguageTile extends StatelessWidget {
           Text(label),
         ],
       ),
+    );
+  }
+}
+
+class _NotificationTile extends StatefulWidget {
+  const _NotificationTile();
+
+  @override
+  State<_NotificationTile> createState() => _NotificationTileState();
+}
+
+class _NotificationTileState extends State<_NotificationTile> {
+  final _notif = NotificationService();
+  bool _dailyEnabled = false;
+  int _hour = 21;
+  int _minute = 0;
+  bool _budgetEnabled = true;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final d = await _notif.isDailyEnabled();
+    final t = await _notif.getDailyTime();
+    final b = await _notif.isBudgetAlertEnabled();
+    if (!mounted) return;
+    setState(() {
+      _dailyEnabled = d;
+      _hour = t.hour;
+      _minute = t.minute;
+      _budgetEnabled = b;
+      _loading = false;
+    });
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _hour, minute: _minute),
+    );
+    if (picked == null) return;
+    await _notif.setDailyReminder(
+      enabled: true,
+      hour: picked.hour,
+      minute: picked.minute,
+    );
+    await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const ListTile(
+        leading: Icon(Icons.notifications_outlined),
+        title: Text('讀取中…'),
+      );
+    }
+    return Column(
+      children: [
+        SwitchListTile(
+          secondary: const Icon(Icons.notifications_outlined),
+          title: const Text('每日記帳提醒'),
+          subtitle: Text(_dailyEnabled
+              ? '每天 ${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')} 提醒'
+              : '關閉'),
+          value: _dailyEnabled,
+          onChanged: (v) async {
+            await _notif.setDailyReminder(
+              enabled: v,
+              hour: _hour,
+              minute: _minute,
+            );
+            await _load();
+          },
+        ),
+        if (_dailyEnabled)
+          ListTile(
+            leading: const Icon(Icons.schedule),
+            title: const Text('提醒時間'),
+            subtitle:
+                Text('${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}'),
+            onTap: _pickTime,
+          ),
+        SwitchListTile(
+          secondary: const Icon(Icons.warning_amber),
+          title: const Text('預算超支提醒'),
+          subtitle: const Text('預算用到 70%、90%、100% 時通知'),
+          value: _budgetEnabled,
+          onChanged: (v) async {
+            await _notif.setBudgetAlertEnabled(v);
+            await _load();
+          },
+        ),
+      ],
     );
   }
 }

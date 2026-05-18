@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_description">記帳本快速記帳</string>
+    <string name="widget_label">記帳本</string>
+    <string name="widget_description">快速記帳・本月結餘一覽</string>
 </resources>

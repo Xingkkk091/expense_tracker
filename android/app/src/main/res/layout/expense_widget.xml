@@ -4,9 +4,9 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_background"
-    android:padding="14dp">
+    android:padding="16dp">
 
-    <!-- 標題列 -->
+    <!-- 標題列：本月 + 品牌 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -21,80 +21,103 @@
             android:text="本月結餘"
             android:textColor="#6E6A60"
             android:textSize="11sp"
-            android:letterSpacing="0.05" />
+            android:letterSpacing="0.12"
+            android:fontFamily="sans-serif" />
 
         <TextView
-            android:id="@+id/widget_app_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="記帳本"
             android:textColor="#A8A498"
-            android:textSize="10sp" />
+            android:textSize="10sp"
+            android:letterSpacing="0.08" />
     </LinearLayout>
 
-    <!-- 結餘金額 -->
+    <!-- 結餘金額（細體大字） -->
     <TextView
         android:id="@+id/widget_balance"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="4dp"
         android:text="NT$ 0"
         android:textColor="#3D3A34"
-        android:textSize="26sp"
-        android:textStyle="normal"
-        android:fontFamily="sans-serif-light" />
+        android:textSize="28sp"
+        android:fontFamily="sans-serif-light"
+        android:letterSpacing="0.02" />
+
+    <!-- 細分隔線 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="10dp"
+        android:background="#E2DFD5" />
 
     <!-- 收入/支出 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="收入"
                 android:textColor="#A8A498"
-                android:textSize="10sp" />
+                android:textSize="10sp"
+                android:letterSpacing="0.1" />
+            <View
+                android:layout_width="6dp"
+                android:layout_height="match_parent" />
             <TextView
                 android:id="@+id/widget_income"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#7C9070"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:textSize="13sp" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="支出"
                 android:textColor="#A8A498"
-                android:textSize="10sp" />
+                android:textSize="10sp"
+                android:letterSpacing="0.1" />
+            <View
+                android:layout_width="6dp"
+                android:layout_height="match_parent" />
             <TextView
                 android:id="@+id/widget_expense"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#B57C70"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 按鈕列 -->
+    <!-- 間距推按鈕到底 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="10dp" />
+
+    <!-- 按鈕列：兩顆等寬、扁平、細邊框 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -104,29 +127,31 @@
         <Button
             android:id="@+id/widget_btn_add"
             android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="2"
+            android:layout_height="42dp"
+            android:layout_weight="1"
             android:background="@drawable/widget_button_primary"
-            android:text="+ 新增記錄"
-            android:textColor="#FFFFFF"
+            android:text="記一筆"
+            android:textColor="#FCFBF7"
             android:textSize="13sp"
             android:textAllCaps="false"
+            android:letterSpacing="0.06"
             android:padding="0dp" />
 
         <View
-            android:layout_width="6dp"
+            android:layout_width="8dp"
             android:layout_height="match_parent" />
 
         <Button
             android:id="@+id/widget_btn_scan"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="42dp"
             android:layout_weight="1"
             android:background="@drawable/widget_button_outline"
             android:text="掃發票"
             android:textColor="#5C6B7A"
-            android:textSize="12sp"
+            android:textSize="13sp"
             android:textAllCaps="false"
+            android:letterSpacing="0.06"
             android:padding="0dp" />
     </LinearLayout>
 

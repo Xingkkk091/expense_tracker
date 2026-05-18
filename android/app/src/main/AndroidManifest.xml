@@ -45,10 +45,11 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- 桌面 Widget -->
+        <!-- 桌面 Widget（Android 12+ 必須 exported=true 才會出現在小工具選單） -->
         <receiver
             android:name=".ExpenseWidgetProvider"
-            android:exported="false">
+            android:exported="true"
+            android:label="@string/widget_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
